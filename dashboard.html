@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --surface2:  #22263a;
+      --border:    #2e3250;
+      --accent:    #6c63ff;
+      --accent2:   #ff6584;
+      --green:     #22c55e;
+      --yellow:    #f59e0b;
+      --red:       #ef4444;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --radius:    12px;
+      --sidebar-w: 240px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ─────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      position: fixed;
+      top: 0; bottom: 0; left: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px 28px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      padding: 0 20px 8px;
+      margin-top: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 0;
+      font-size: 14px;
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active {
+      background: rgba(108,99,255,0.12);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 3px 3px 0;
+    }
+    .nav-icon { font-size: 16px; width: 18px; text-align: center; }
+    .badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .avatar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .avatar-name { font-weight: 600; }
+    .avatar-role { font-size: 11px; color: var(--muted); }
+
+    /* ── Main ────────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 32px 36px;
+      overflow-y: auto;
+    }
+
+    /* ── Topbar ──────────────────────────────── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .topbar h1 { font-size: 22px; font-weight: 700; }
+    .topbar p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .search {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      width: 220px;
+    }
+    .search input {
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 13px;
+      width: 100%;
+    }
+    .search input::placeholder { color: var(--muted); }
+
+    /* ── Stat Cards ──────────────────────────── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .stat-value { font-size: 30px; font-weight: 700; line-height: 1; }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .stat-sub span { color: var(--green); }
+    .stat-sub span.down { color: var(--red); }
+
+    .progress-bar { height: 4px; background: var(--surface2); border-radius: 4px; margin-top: 12px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; }
+
+    /* ── Two-col grid ────────────────────────── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    /* ── Panel ───────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .panel-title { font-size: 15px; font-weight: 700; }
+    .panel-action { font-size: 12px; color: var(--accent); cursor: pointer; }
+
+    /* ── Task list ───────────────────────────── */
+    .task-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .filter-chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .filter-chip:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .task-item:last-child { border-bottom: none; }
+
+    .checkbox {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 1px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .checkbox.checked { background: var(--green); border-color: var(--green); }
+    .checkbox.checked::after { content: '✓'; font-size: 11px; color: #fff; font-weight: 700; }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task-title.done { text-decoration: line-through; color: var(--muted); }
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .priority {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .priority.high   { background: rgba(239,68,68,0.15);  color: var(--red); }
+    .priority.medium { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .priority.low    { background: rgba(34,197,94,0.15);  color: var(--green); }
+
+    .assignee-stack { display: flex; }
+    .assignee-stack .av {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--surface);
+      font-size: 9px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-left: -6px;
+      color: #fff;
+    }
+    .assignee-stack .av:first-child { margin-left: 0; }
+
+    /* ── Activity feed ───────────────────────── */
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .act-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .act-text { color: var(--muted); line-height: 1.5; }
+    .act-text strong { color: var(--text); }
+    .act-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Projects ────────────────────────────── */
+    .project-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .project-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .project-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .project-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .project-name { font-size: 14px; font-weight: 700; }
+    .project-tasks { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .project-progress { margin: 14px 0 10px; }
+    .prog-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .prog-label span:last-child { font-weight: 700; color: var(--text); }
+
+    .project-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .project-due { font-size: 11px; color: var(--muted); }
+    .project-due span { color: var(--yellow); }
+
+    /* ── Scrollbar ───────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    TaskFlow
+  </div>
+
+  <span class="nav-label">Menu</span>
+  <div class="nav-item active"><span class="nav-icon">⊞</span> Dashboard</div>
+  <div class="nav-item"><span class="nav-icon">✓</span> My Tasks <span class="badge">12</span></div>
+  <div class="nav-item"><span class="nav-icon">◫</span> Projects</div>
+  <div class="nav-item"><span class="nav-icon">📅</span> Calendar</div>
+  <div class="nav-item"><span class="nav-icon">📊</span> Analytics</div>
+
+  <span class="nav-label" style="margin-top:12px">Workspaces</span>
+  <div class="nav-item"><span class="nav-icon" style="color:#6c63ff">●</span> Design System</div>
+  <div class="nav-item"><span class="nav-icon" style="color:#22c55e">●</span> Backend API</div>
+  <div class="nav-item"><span class="nav-icon" style="color:#f59e0b">●</span> Marketing</div>
+  <div class="nav-item"><span class="nav-icon" style="color:#ef4444">●</span> Mobile App</div>
+
+  <div class="sidebar-footer">
+    <div class="avatar-row">
+      <div class="avatar">JD</div>
+      <div>
+        <div class="avatar-name">Jamie D.</div>
+        <div class="avatar-role">Product Manager</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <h1>Good morning, Jamie 👋</h1>
+      <p>Friday, April 4, 2026 · You have 5 tasks due today</p>
+    </div>
+    <div class="topbar-right">
+      <div class="search">
+        <span>🔍</span>
+        <input type="text" placeholder="Search tasks…" />
+      </div>
+      <button class="btn btn-ghost">⚙ Settings</button>
+      <button class="btn btn-primary">+ New Task</button>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-top">
+        <span class="stat-label">Total Tasks</span>
+        <div class="stat-icon" style="background:rgba(108,99,255,0.15)">📋</div>
+      </div>
+      <div class="stat-value">128</div>
+      <div class="stat-sub"><span>↑ 8%</span> vs last week</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:72%;background:var(--accent)"></div></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-top">
+        <span class="stat-label">Completed</span>
+        <div class="stat-icon" style="background:rgba(34,197,94,0.15)">✅</div>
+      </div>
+      <div class="stat-value">84</div>
+      <div class="stat-sub"><span>↑ 12%</span> this sprint</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:65%;background:var(--green)"></div></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-top">
+        <span class="stat-label">In Progress</span>
+        <div class="stat-icon" style="background:rgba(245,158,11,0.15)">⏳</div>
+      </div>
+      <div class="stat-value">31</div>
+      <div class="stat-sub">Across <span>4 projects</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:40%;background:var(--yellow)"></div></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-top">
+        <span class="stat-label">Overdue</span>
+        <div class="stat-icon" style="background:rgba(239,68,68,0.15)">🔥</div>
+      </div>
+      <div class="stat-value">13</div>
+      <div class="stat-sub"><span class="down">↑ 3</span> since yesterday</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--red)"></div></div>
+    </div>
+  </div>
+
+  <!-- Tasks + Activity -->
+  <div class="grid-2">
+
+    <!-- Task List -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Tasks · Today</span>
+        <span class="panel-action">View all →</span>
+      </div>
+
+      <div class="task-filters">
+        <button class="filter-chip active">All</button>
+        <button class="filter-chip">In Progress</button>
+        <button class="filter-chip">Pending</button>
+        <button class="filter-chip">Done</button>
+      </div>
+
+      <!-- Task items -->
+      <div class="task-item">
+        <div class="checkbox"></div>
+        <div class="task-body">
+          <div class="task-title">Finalize Q2 product roadmap deck</div>
+          <div class="task-meta">
+            <span class="priority high">● High</span>
+            <span>📅 Today, 3 PM</span>
+            <span>📁 Design System</span>
+            <div class="assignee-stack">
+              <div class="av" style="background:#6c63ff">JD</div>
+              <div class="av" style="background:#ff6584">AL</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-item">
+        <div class="checkbox"></div>
+        <div class="task-body">
+          <div class="task-title">Review pull request #247 — auth module</div>
+          <div class="task-meta">
+            <span class="priority high">● High</span>
+            <span>📅 Today, 5 PM</span>
+            <span>📁 Backend API</span>
+            <div class="assignee-stack">
+              <div class="av" style="background:#22c55e">MR</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-item">
+        <div class="checkbox"></div>
+        <div class="task-body">
+          <div class="task-title">Write copy for onboarding email sequence</div>
+          <div class="task-meta">
+            <span class="priority medium">● Medium</span>
+            <span>📅 Tomorrow</span>
+            <span>📁 Marketing</span>
+            <div class="assignee-stack">
+              <div class="av" style="background:#f59e0b">KL</div>
+              <div class="av" style="background:#6c63ff">JD</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-item">
+        <div class="checkbox checked"></div>
+        <div class="task-body">
+          <div class="task-title done">Set up CI/CD pipeline for staging env</div>
+          <div class="task-meta">
+            <span class="priority low">● Low</span>
+            <span>✓ Completed 9:14 AM</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-item">
+        <div class="checkbox checked"></div>
+        <div class="task-body">
+          <div class="task-title done">Update Figma component library tokens</div>
+          <div class="task-meta">
+            <span class="priority medium">● Medium</span>
+            <span>✓ Completed 11:30 AM</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-item">
+        <div class="checkbox"></div>
+        <div class="task-body">
+          <div class="task-title">Conduct user interviews for mobile redesign</div>
+          <div class="task-meta">
+            <span class="priority medium">● Medium</span>
+            <span>📅 Apr 7</span>
+            <span>📁 Mobile App</span>
+            <div class="assignee-stack">
+              <div class="av" style="background:#ef4444">TN</div>
+              <div class="av" style="background:#ff6584">AL</div>
+              <div class="av" style="background:#22c55e">MR</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-item">
+        <div class="checkbox"></div>
+        <div class="task-body">
+          <div class="task-title">Draft technical spec for search indexing</div>
+          <div class="task-meta">
+            <span class="priority low">● Low</span>
+            <span>📅 Apr 9</span>
+            <span>📁 Backend API</span>
+            <div class="assignee-stack">
+              <div class="av" style="background:#6c63ff">JD</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Recent Activity</span>
+        <span class="panel-action">Clear all</span>
+      </div>
+
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--green)"></div>
+        <div>
+          <div class="act-text"><strong>Alex L.</strong> completed <strong>Design token audit</strong></div>
+          <div class="act-time">2 min ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--accent)"></div>
+        <div>
+          <div class="act-text"><strong>You</strong> assigned <strong>Auth PR review</strong> to MR</div>
+          <div class="act-time">18 min ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--yellow)"></div>
+        <div>
+          <div class="act-text"><strong>Tom N.</strong> moved <strong>Mobile nav redesign</strong> to In Progress</div>
+          <div class="act-time">41 min ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--red)"></div>
+        <div>
+          <div class="act-text"><strong>Maya R.</strong> flagged <strong>API rate limiting</strong> as overdue</div>
+          <div class="act-time">1 hr ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--green)"></div>
+        <div>
+          <div class="act-text"><strong>You</strong> completed <strong>CI/CD pipeline setup</strong></div>
+          <div class="act-time">2 hr ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--accent)"></div>
+        <div>
+          <div class="act-text"><strong>Kim L.</strong> commented on <strong>Email onboarding copy</strong></div>
+          <div class="act-time">3 hr ago</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--accent)"></div>
+        <div>
+          <div class="act-text">New project <strong>Mobile App v2.0</strong> created by <strong>You</strong></div>
+          <div class="act-time">Yesterday</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="act-dot" style="background:var(--yellow)"></div>
+        <div>
+          <div class="act-text"><strong>Alex L.</strong> updated due date on <strong>Q2 roadmap deck</strong></div>
+          <div class="act-time">Yesterday</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projects -->
+  <div style="margin-bottom:10px">
+    <div class="panel-header">
+      <span class="panel-title" style="font-size:16px">Active Projects</span>
+      <span class="panel-action">View all →</span>
+    </div>
+  </div>
+  <div class="project-cards">
+
+    <div class="project-card">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(108,99,255,0.15)">🎨</div>
+        <div>
+          <div class="project-name">Design System</div>
+          <div class="project-tasks">34 tasks · 5 members</div>
+        </div>
+      </div>
+      <div class="project-progress">
+        <div class="prog-label"><span>Progress</span><span>78%</span></div>
+        <div class="progress-bar" style="height:6px"><div class="progress-fill" style="width:78%;background:var(--accent)"></div></div>
+      </div>
+      <div class="project-footer">
+        <div class="assignee-stack">
+          <div class="av" style="background:#6c63ff">JD</div>
+          <div class="av" style="background:#ff6584">AL</div>
+          <div class="av" style="background:#22c55e">MR</div>
+        </div>
+        <div class="project-due">Due <span>Apr 18</span></div>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(34,197,94,0.15)">⚙️</div>
+        <div>
+          <div class="project-name">Backend API v3</div>
+          <div class="project-tasks">52 tasks · 4 members</div>
+        </div>
+      </div>
+      <div class="project-progress">
+        <div class="prog-label"><span>Progress</span><span>45%</span></div>
+        <div class="progress-bar" style="height:6px"><div class="progress-fill" style="width:45%;background:var(--green)"></div></div>
+      </div>
+      <div class="project-footer">
+        <div class="assignee-stack">
+          <div class="av" style="background:#22c55e">MR</div>
+          <div class="av" style="background:#f59e0b">KL</div>
+          <div class="av" style="background:#6c63ff">JD</div>
+        </div>
+        <div class="project-due">Due <span>May 2</span></div>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(245,158,11,0.15)">📣</div>
+        <div>
+          <div class="project-name">Q2 Marketing</div>
+          <div class="project-tasks">28 tasks · 3 members</div>
+        </div>
+      </div>
+      <div class="project-progress">
+        <div class="prog-label"><span>Progress</span><span>62%</span></div>
+        <div class="progress-bar" style="height:6px"><div class="progress-fill" style="width:62%;background:var(--yellow)"></div></div>
+      </div>
+      <div class="project-footer">
+        <div class="assignee-stack">
+          <div class="av" style="background:#f59e0b">KL</div>
+          <div class="av" style="background:#ff6584">AL</div>
+        </div>
+        <div class="project-due">Due <span>Apr 30</span></div>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(239,68,68,0.15)">📱</div>
+        <div>
+          <div class="project-name">Mobile App v2</div>
+          <div class="project-tasks">41 tasks · 6 members</div>
+        </div>
+      </div>
+      <div class="project-progress">
+        <div class="prog-label"><span>Progress</span><span>22%</span></div>
+        <div class="progress-bar" style="height:6px"><div class="progress-fill" style="width:22%;background:var(--red)"></div></div>
+      </div>
+      <div class="project-footer">
+        <div class="assignee-stack">
+          <div class="av" style="background:#ef4444">TN</div>
+          <div class="av" style="background:#6c63ff">JD</div>
+          <div class="av" style="background:#ff6584">AL</div>
+        </div>
+        <div class="project-due">Due <span>Jun 15</span></div>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-header">
+        <div class="project-icon" style="background:rgba(108,99,255,0.15)">🔐</div>
+        <div>
+          <div class="project-name">Auth Overhaul</div>
+          <div class="project-tasks">19 tasks · 2 members</div>
+        </div>
+      </div>
+      <div class="project-progress">
+        <div class="prog-label"><span>Progress</span><span>89%</span></div>
+        <div class="progress-bar" style="height:6px"><div class="progress-fill" style="width:89%;background:var(--accent)"></div></div>
+      </div>
+      <div class="project-footer">
+        <div class="assignee-stack">
+          <div class="av" style="background:#22c55e">MR</div>
+          <div class="av" style="background:#6c63ff">JD</div>
+        </div>
+        <div class="project-due">Due <span>Apr 6</span></div>
+      </div>
+    </div>
+
+    <div class="project-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);min-height:160px">
+      <div style="font-size:24px">＋</div>
+      <div style="font-size:13px;font-weight:600">New Project</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Toggle checkboxes
+  document.querySelectorAll('.checkbox').forEach(cb => {
+    cb.addEventListener('click', () => {
+      cb.classList.toggle('checked');
+      const title = cb.closest('.task-item').querySelector('.task-title');
+      title.classList.toggle('done');
+    });
+  });
+
+  // Filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.closest('.task-filters').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
