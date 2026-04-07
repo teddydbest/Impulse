@@ -1,0 +1,16 @@
+{
+  "name": "impulse-3d-file-world",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.163.0"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0"
+  }
+}
