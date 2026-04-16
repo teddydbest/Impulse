@@ -1,0 +1,122 @@
+/*
+  PEPPI'S PIZZA MIA — MENU PAGE STYLES
+  Paste this into: Pages → [Menu Page] → Advanced → Page Header Code Injection
+  Wrap it in: <style> ... </style>
+
+  This styles your menu as a clean typographic list — no icons, no tables,
+  no Squarespace "menu block" chrome. Pure editorial typography.
+
+  HOW TO STRUCTURE THE MENU PAGE IN SQUARESPACE:
+  - Do NOT use the built-in "Menu" block
+  - Use plain Text Blocks:
+      - H3 for category names (PIZZA / SALADS / DRINKS)
+      - Paragraph for each item
+  - Use a Code Block for the price column if needed (or just list price inline)
+*/
+
+/* ============================================================
+   MENU PAGE — CONTAINER
+   ============================================================ */
+.menu-page-wrapper,
+[data-section-id] .sqs-layout {
+  max-width: 700px !important;
+  margin: 0 auto !important;
+  padding: 120px 40px 160px !important;
+}
+
+@media (max-width: 767px) {
+  .menu-page-wrapper,
+  [data-section-id] .sqs-layout {
+    padding: 100px 24px 120px !important;
+  }
+}
+
+/* ============================================================
+   MENU — CATEGORY HEADINGS (use H3 in text block)
+   ============================================================ */
+.sqs-block-content h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif !important;
+  font-weight: 300 !important;
+  font-style: italic !important;
+  font-size: clamp(1.6rem, 4vw, 2.8rem) !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: #f0ebe0 !important;
+  margin: 72px 0 20px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(240, 235, 224, 0.12) !important;
+}
+
+/* First category — no top margin */
+.sqs-block-content h3:first-child {
+  margin-top: 0 !important;
+}
+
+/* ============================================================
+   MENU — ITEM LINES (use Paragraph in text block)
+   Format: Item Name .... $XX
+   Or simply: Item Name — $XX
+   ============================================================ */
+.sqs-block-content p {
+  font-family: 'Jost', sans-serif !important;
+  font-weight: 300 !important;
+  font-size: 0.9rem !important;
+  letter-spacing: 0.05em !important;
+  color: #f0ebe0 !important;
+  line-height: 1.6 !important;
+  margin: 0 0 8px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+}
+
+/* Item description sub-line — wrap in <em> tag in Squarespace */
+.sqs-block-content p em {
+  font-family: 'Jost', sans-serif !important;
+  font-weight: 200 !important;
+  font-style: normal !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.06em !important;
+  color: #b8b0a0 !important;
+  display: block !important;
+  margin-top: -4px !important;
+  margin-bottom: 12px !important;
+}
+
+/* ============================================================
+   MENU — PAGE TITLE (H1 at top)
+   ============================================================ */
+h1.page-title {
+  font-family: 'Cormorant Garamond', Georgia, serif !important;
+  font-weight: 300 !important;
+  font-style: italic !important;
+  font-size: clamp(2.5rem, 6vw, 5rem) !important;
+  letter-spacing: 0.04em !important;
+  color: #f0ebe0 !important;
+  text-align: center !important;
+  margin-bottom: 60px !important;
+}
+
+/* ============================================================
+   MENU — HIDE SQUARESPACE MENU BLOCK (if accidentally added)
+   Only triggers if someone used the Menu block instead of text
+   ============================================================ */
+.sqs-block-menu {
+  display: none !important;
+}
+
+/* ============================================================
+   MENU — NOTE / FOOTER TEXT (add a text block at bottom)
+   Use a text block with small print — wrapping <small> tag
+   ============================================================ */
+.sqs-block-content small {
+  font-family: 'Jost', sans-serif !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: #b8b0a0 !important;
+  display: block !important;
+  margin-top: 60px !important;
+  text-align: center !important;
+  line-height: 2 !important;
+}

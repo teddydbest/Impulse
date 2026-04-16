@@ -1,0 +1,278 @@
+/*
+  PEPPI'S PIZZA MIA — SQUARESPACE GLOBAL STYLES
+  Paste this entire file into: Design → Custom CSS
+  Target aesthetic: Pizzeria Beddia — dark, editorial, minimalist
+*/
+
+/* ============================================================
+   1. FONT IMPORT
+   Cormorant Garamond: editorial display serif for headings
+   Jost: clean geometric sans for body/nav
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@200;300;400&display=swap');
+
+/* ============================================================
+   2. GLOBAL BASE
+   ============================================================ */
+:root {
+  --color-bg: #111111;
+  --color-text: #f0ebe0;
+  --color-text-muted: #b8b0a0;
+  --color-border: rgba(240, 235, 224, 0.12);
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Jost', sans-serif;
+  --letter-spacing-nav: 0.18em;
+  --letter-spacing-heading: 0.04em;
+}
+
+body {
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+}
+
+/* ============================================================
+   3. TYPOGRAPHY
+   ============================================================ */
+h1, h2, h3, h4 {
+  font-family: var(--font-display) !important;
+  font-weight: 300 !important;
+  letter-spacing: var(--letter-spacing-heading) !important;
+  color: var(--color-text) !important;
+  line-height: 1.1 !important;
+}
+
+h1 {
+  font-size: clamp(3rem, 8vw, 7rem) !important;
+  font-style: italic !important;
+}
+
+h2 {
+  font-size: clamp(2rem, 5vw, 4rem) !important;
+}
+
+h3 {
+  font-size: clamp(1.25rem, 3vw, 2rem) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  font-style: normal !important;
+}
+
+p, li, .sqs-block-content {
+  font-family: var(--font-body) !important;
+  font-weight: 300 !important;
+  color: var(--color-text) !important;
+  line-height: 1.75 !important;
+  letter-spacing: 0.02em !important;
+}
+
+a {
+  color: var(--color-text) !important;
+  text-decoration: none !important;
+}
+
+a:hover {
+  opacity: 0.6 !important;
+  transition: opacity 0.25s ease !important;
+}
+
+/* ============================================================
+   4. NAVIGATION
+   ============================================================ */
+
+/* Nav links */
+.header-nav-item a,
+.header-nav-folder-title {
+  font-family: var(--font-body) !important;
+  font-weight: 300 !important;
+  font-size: 0.7rem !important;
+  letter-spacing: var(--letter-spacing-nav) !important;
+  text-transform: uppercase !important;
+  color: var(--color-text) !important;
+  opacity: 0.9;
+}
+
+.header-nav-item a:hover {
+  opacity: 0.5 !important;
+}
+
+/* Remove nav underlines and decoration */
+.header-nav-item a::after,
+.header-nav-item a::before {
+  display: none !important;
+}
+
+/* Transparent header — stays transparent, gains subtle bg on scroll */
+.header--top {
+  background: transparent !important;
+}
+
+.header--scroll {
+  background: rgba(17, 17, 17, 0.92) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Logo text style */
+.header-title-logo,
+.header-title-logo a {
+  font-family: var(--font-display) !important;
+  font-weight: 300 !important;
+  font-style: italic !important;
+  font-size: 1.4rem !important;
+  letter-spacing: 0.06em !important;
+  color: var(--color-text) !important;
+  text-transform: none !important;
+}
+
+/* Mobile hamburger menu icon */
+.header-burger-btn .burger-line {
+  background-color: var(--color-text) !important;
+}
+
+/* Mobile nav background */
+.header-menu-nav-wrapper {
+  background-color: var(--color-bg) !important;
+}
+
+/* ============================================================
+   5. SECTIONS & BACKGROUNDS
+   ============================================================ */
+
+/* All sections default dark */
+.page-section {
+  background-color: var(--color-bg) !important;
+}
+
+/* Remove any white gaps between sections */
+.sqs-layout,
+.sqs-col-12,
+.row.sqs-row {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ============================================================
+   6. BUTTONS
+   ============================================================ */
+.sqs-block-button-element,
+.btn,
+button[type="submit"] {
+  background: transparent !important;
+  border: 1px solid var(--color-text) !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-body) !important;
+  font-weight: 300 !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase !important;
+  padding: 14px 36px !important;
+  border-radius: 0 !important;
+  transition: background 0.3s ease, color 0.3s ease !important;
+}
+
+.sqs-block-button-element:hover {
+  background: var(--color-text) !important;
+  color: var(--color-bg) !important;
+}
+
+/* ============================================================
+   7. IMAGE SECTIONS
+   ============================================================ */
+
+/* Full-bleed image sections — no border radius, no overflow clip */
+.sqs-block-image img,
+.content-fill img {
+  border-radius: 0 !important;
+}
+
+/* Banner/hero sections — expand to full viewport height */
+.page-section:first-child {
+  min-height: 100vh !important;
+}
+
+/* ============================================================
+   8. DIVIDERS & DECORATIVE ELEMENTS
+   Squarespace adds decorative lines and shapes — remove them
+   ============================================================ */
+.sqs-block-horizontalrule hr {
+  border-color: var(--color-border) !important;
+  border-width: 1px 0 0 0 !important;
+}
+
+/* Remove default Squarespace section overlay chrome */
+.page-section .section-border {
+  display: none !important;
+}
+
+/* ============================================================
+   9. FOOTER
+   ============================================================ */
+footer,
+.sections .page-section:last-child {
+  background-color: var(--color-bg) !important;
+  border-top: 1px solid var(--color-border) !important;
+}
+
+.footer-block-content,
+.footer-block-content p,
+.footer-block-content a {
+  font-family: var(--font-body) !important;
+  font-weight: 300 !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  color: var(--color-text-muted) !important;
+}
+
+/* ============================================================
+   10. FORMS (reservations / contact)
+   ============================================================ */
+.field-element,
+input,
+textarea,
+select {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: 0 !important;
+  color: var(--color-text) !important;
+  font-family: var(--font-body) !important;
+  font-weight: 300 !important;
+  letter-spacing: 0.05em !important;
+  padding: 10px 0 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted) !important;
+  letter-spacing: 0.1em !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+}
+
+input:focus,
+textarea:focus {
+  outline: none !important;
+  border-bottom-color: var(--color-text) !important;
+}
+
+/* ============================================================
+   11. SQUARESPACE ORDER ONLINE / TOCK / RESY EMBED
+   If you embed a reservation widget, this keeps it dark-themed
+   ============================================================ */
+.sqs-block-code iframe {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* ============================================================
+   12. SCROLLBAR (optional — makes it look intentional)
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+}
