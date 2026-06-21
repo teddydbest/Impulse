@@ -72,12 +72,28 @@
   }
 
   function loadData() {
+    // Standalone builds inline the dataset as window.__CAMERA_DATA__ so the
+    // page works from a file:// URL without a server. Otherwise fetch it.
+    if (window.__CAMERA_DATA__) {
+      handleData(window.__CAMERA_DATA__);
+      return;
+    }
     fetch("data/cameras.json", { cache: "no-cache" })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
-      .then(function (data) {
+      .then(handleData)
+      .catch(function (err) {
+        els.list.innerHTML =
+          '<li class="disclaimer">Could not load camera data (' +
+          escapeHtml(err.message) +
+          "). If you opened this file directly, run a local web server " +
+          "(e.g. <code>python3 -m http.server</code>) so the browser can fetch the JSON.</li>";
+      });
+  }
+
+  function handleData(data) {
         state.cameras = (data.cameras || []).filter(hasValidCoords);
         state.meta = data.meta || {};
         buildFilters();
@@ -87,14 +103,6 @@
           var b = L.latLngBounds(state.cameras.map(function (c) { return [c.lat, c.lng]; }));
           map.fitBounds(b.pad(0.15));
         }
-      })
-      .catch(function (err) {
-        els.list.innerHTML =
-          '<li class="disclaimer">Could not load camera data (' +
-          escapeHtml(err.message) +
-          "). If you opened this file directly, run a local web server " +
-          "(e.g. <code>python3 -m http.server</code>) so the browser can fetch the JSON.</li>";
-      });
   }
 
   function hasValidCoords(c) {
