@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Exhaust / Noise Camera Map (standalone)</title>
+  <meta name="description" content="An interactive, crowdsourced map of NYC's roadside noise (loud exhaust / muffler) enforcement cameras." />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <style>
+:root {
+  --bg: #0f1419;
+  --panel: #1a2129;
+  --panel-2: #232c37;
+  --border: #2e3947;
+  --text: #e6edf3;
+  --muted: #8b98a9;
+  --accent: #ffcc33;
+  --accent-2: #4aa3ff;
+  --active: #ff5a4d;
+  --reported: #f5a623;
+  --radius: 10px;
+  --topbar-h: 60px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* Topbar */
+#topbar {
+  height: var(--topbar-h);
+  flex: 0 0 var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  z-index: 1100;
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-icon { font-size: 26px; }
+.brand-text h1 { font-size: 16px; margin: 0; line-height: 1.2; }
+.brand-text p { font-size: 12px; margin: 2px 0 0; color: var(--muted); }
+.sidebar-toggle {
+  display: none;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Main layout */
+#main { flex: 1 1 auto; display: flex; min-height: 0; position: relative; }
+
+#sidebar {
+  width: 340px;
+  flex: 0 0 340px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+}
+
+#map { flex: 1 1 auto; min-height: 0; background: #0b0f14; }
+
+/* Sidebar sections */
+.sidebar-section { margin-bottom: 18px; }
+.field-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.stats { display: flex; gap: 12px; }
+.stat {
+  flex: 1;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+}
+.stat-num { display: block; font-size: 26px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--muted); }
+
+#search {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+}
+#search:focus { outline: none; border-color: var(--accent-2); }
+
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: all .12s ease;
+}
+.chip:hover { border-color: var(--accent-2); }
+.chip.active { background: var(--accent-2); border-color: var(--accent-2); color: #04121f; font-weight: 600; }
+
+.list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.mini-btn {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 5px 9px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mini-btn:hover { border-color: var(--accent-2); }
+
+.camera-list { list-style: none; margin: 0; padding: 0; }
+.camera-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: var(--panel-2);
+  transition: border-color .12s ease;
+}
+.camera-item:hover { border-color: var(--accent-2); }
+.camera-item .ci-addr { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.camera-item .ci-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.ci-badge { font-size: 10px; padding: 1px 6px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+.badge-active { background: rgba(255,90,77,.18); color: #ff8a80; }
+.badge-reported { background: rgba(245,166,35,.18); color: #ffce85; }
+
+.disclaimer { font-size: 11px; color: var(--muted); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 12px; }
+.disclaimer a { color: var(--accent-2); }
+
+/* Legend */
+.legend {
+  position: absolute;
+  right: 14px;
+  bottom: 26px;
+  background: rgba(26,33,41,.94);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 12px;
+  z-index: 1000;
+  max-width: 240px;
+}
+.legend-title { font-weight: 700; margin-bottom: 6px; }
+.legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.dot-active { background: var(--active); }
+.dot-reported { background: var(--reported); }
+.legend-note { color: var(--muted); margin-top: 6px; font-size: 11px; line-height: 1.4; }
+
+/* Marker icon */
+.cam-marker {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid rgba(0,0,0,.35);
+  box-shadow: 0 2px 6px rgba(0,0,0,.5);
+}
+.cam-marker.active { background: var(--active); }
+.cam-marker.reported { background: var(--reported); }
+.cam-marker span { transform: rotate(45deg); font-size: 15px; }
+
+/* Popup */
+.leaflet-popup-content-wrapper { background: var(--panel); color: var(--text); border-radius: var(--radius); }
+.leaflet-popup-tip { background: var(--panel); }
+.cam-popup { font-size: 13px; max-width: 260px; }
+.cam-popup h3 { margin: 0 0 4px; font-size: 15px; }
+.cam-popup .cp-sub { color: var(--muted); margin-bottom: 8px; }
+.cam-popup .cp-notes { margin: 8px 0; line-height: 1.45; }
+.cam-popup .cp-sources a { color: var(--accent-2); display: block; margin-top: 3px; font-size: 12px; word-break: break-word; }
+.cam-popup .cp-row { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+
+/* Responsive */
+@media (max-width: 760px) {
+  .sidebar-toggle { display: block; }
+  #sidebar {
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    z-index: 1050;
+    width: 86%;
+    max-width: 360px;
+    transform: translateX(-101%);
+    transition: transform .22s ease;
+  }
+  #sidebar.open { transform: translateX(0); }
+  .brand-text p { display: none; }
+  .legend { display: none; }
+}
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">📷</span>
+        <div class="brand-text">
+          <h1>NYC Exhaust&nbsp;/&nbsp;Noise Camera Map</h1>
+          <p>Crowdsourced locations of NYC's loud-muffler &amp; exhaust enforcement cameras</p>
+        </div>
+      </div>
+      <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle list panel">☰ List</button>
+    </header>
+
+    <div id="main">
+      <aside id="sidebar" aria-label="Camera list and filters">
+        <div class="sidebar-section stats">
+          <div class="stat">
+            <span class="stat-num" id="stat-count">–</span>
+            <span class="stat-label">cameras shown</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="stat-total">–</span>
+            <span class="stat-label">total reported</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <label class="field-label" for="search">Search address / neighborhood</label>
+          <input type="search" id="search" placeholder="e.g. Bay Ridge, 41st St…" autocomplete="off" />
+        </div>
+
+        <div class="sidebar-section">
+          <span class="field-label">Borough</span>
+          <div id="borough-filters" class="chip-group"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <span class="field-label">Status</span>
+          <div id="status-filters" class="chip-group"></div>
+        </div>
+
+        <div class="sidebar-section list-header">
+          <span class="field-label">Locations</span>
+          <button id="locate-me" class="mini-btn" title="Find cameras near me">📍 Near me</button>
+        </div>
+        <ul id="camera-list" class="camera-list"></ul>
+
+        <div class="sidebar-section disclaimer" id="disclaimer"></div>
+      </aside>
+
+      <div id="map" role="application" aria-label="Map of NYC exhaust and noise cameras"></div>
+    </div>
+
+    <div id="legend" class="legend">
+      <div class="legend-title">Legend</div>
+      <div class="legend-row"><span class="legend-dot dot-active"></span> Active / confirmed reporting</div>
+      <div class="legend-row"><span class="legend-dot dot-reported"></span> Community-reported</div>
+      <div class="legend-note">Coordinates are approximate. The City does not publish exact locations.</div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script>window.__CAMERA_DATA__ = {"meta": {"title": "NYC Exhaust / Noise Camera Locations", "description": "Crowdsourced and reported locations of NYC DEP roadside noise (loud exhaust / muffler) enforcement cameras. The City of New York does not publish exact camera locations, so these points are compiled from news reporting, public DEP documents, and community reports. Coordinates are approximate.", "lastUpdated": "2026-05-29", "coordinateAccuracy": "approximate", "totalDeployedPerCity": 11, "sources": [{"label": "NYC DEP Noise Camera Enforcement Program", "url": "https://www.nyc.gov/site/dep/environment/noise-code.page"}, {"label": "DEP 2025 Annual Report for Noise Camera Enforcement Program (PDF)", "url": "https://www.nyc.gov/assets/dep/downloads/pdf/air/noise/2025-annual-report-noise-camera-enforcement-program.pdf"}, {"label": "DEP 2024 Annual Report (PDF)", "url": "https://www.nyc.gov/assets/dep/downloads/pdf/air/noise/2024-annual-report-noise-camera-enforcement-program.pdf"}, {"label": "Time Out NY — NYC's noise cameras explained", "url": "https://www.timeout.com/newyork/news/nycs-noise-cameras-are-here-to-fine-you-everything-to-know-about-the-new-hidden-tech-091725"}, {"label": "Gothamist — crackdown on noisy drivers", "url": "https://gothamist.com/news/accelerate-crackdown-on-noisy-drivers-with-ai-nyc-councilmember-says"}, {"label": "Brooklyn Paper — Bay Ridge noise camera", "url": "https://www.brooklynpaper.com/city-noise-camera-program-expands-bay-ridge/"}, {"label": "Waze community thread — noise camera reports", "url": "https://www.waze.com/discuss/t/noise-camera/365476"}]}, "cameras": [{"id": "mn-w41-lincoln", "address": "510 West 41st Street (near Lincoln Tunnel)", "neighborhood": "Hell's Kitchen", "borough": "Manhattan", "lat": 40.7585, "lng": -73.9962, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Highest-violation camera in the program — reported to account for roughly 25% of all summonses (375+ violations over ~2 years).", "sources": ["https://www.timeout.com/newyork/news/nycs-noise-cameras-are-here-to-fine-you-everything-to-know-about-the-new-hidden-tech-091725"]}, {"id": "mn-e36", "address": "210 East 36th Street", "neighborhood": "Murray Hill", "borough": "Manhattan", "lat": 40.7459, "lng": -73.9774, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Second-highest violation count in the program per DEP reporting.", "sources": ["https://www.timeout.com/newyork/news/nycs-noise-cameras-are-here-to-fine-you-everything-to-know-about-the-new-hidden-tech-091725"]}, {"id": "mn-w43", "address": "545 West 43rd Street", "neighborhood": "Hell's Kitchen", "borough": "Manhattan", "lat": 40.7607, "lng": -73.9943, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Documented deployment site in community / news reporting.", "sources": ["https://www.waze.com/discuss/t/noise-camera/365476"]}, {"id": "mn-stnick-184", "address": "St. Nicholas Avenue & West 184th Street", "neighborhood": "Washington Heights", "borough": "Manhattan", "lat": 40.8513, "lng": -73.9337, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Documented deployment site in community / news reporting.", "sources": ["https://www.waze.com/discuss/t/noise-camera/365476"]}, {"id": "mn-amsterdam-1808", "address": "1808 Amsterdam Avenue (near W 150th St)", "neighborhood": "Hamilton Heights", "borough": "Manhattan", "lat": 40.8254, "lng": -73.943, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Documented deployment site in community / news reporting.", "sources": ["https://www.waze.com/discuss/t/noise-camera/365476"]}, {"id": "mn-fortgeorge-hillside", "address": "Fort George Avenue & Hillside Avenue", "neighborhood": "Fort George / Inwood", "borough": "Manhattan", "lat": 40.8612, "lng": -73.927, "status": "reported", "confidence": "reported", "type": "noise/exhaust", "notes": "Community-reported deployment site.", "sources": ["https://www.waze.com/discuss/t/noise-camera/365476"]}, {"id": "qn-20ave-astoria", "address": "36-11 20th Avenue", "neighborhood": "Astoria", "borough": "Queens", "lat": 40.777, "lng": -73.9087, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Reported among Queens deployment sites (Astoria's 20th Avenue).", "sources": ["https://gothamist.com/news/accelerate-crackdown-on-noisy-drivers-with-ai-nyc-councilmember-says"]}, {"id": "qn-borden-lic", "address": "Borden Avenue, Long Island City", "neighborhood": "Long Island City", "borough": "Queens", "lat": 40.741, "lng": -73.954, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Reported LIC deployment site (Borden Avenue).", "sources": ["https://gothamist.com/news/accelerate-crackdown-on-noisy-drivers-with-ai-nyc-councilmember-says"]}, {"id": "qn-horaceharding-flushing", "address": "99-25 Horace Harding Expressway", "neighborhood": "Flushing / Corona", "borough": "Queens", "lat": 40.737, "lng": -73.859, "status": "reported", "confidence": "reported", "type": "noise/exhaust", "notes": "Community-reported deployment site.", "sources": ["https://www.waze.com/discuss/t/noise-camera/365476"]}, {"id": "bk-3ave-67", "address": "6700 3rd Avenue", "neighborhood": "Bay Ridge", "borough": "Brooklyn", "lat": 40.6356, "lng": -74.0277, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Bay Ridge deployment targeting late-night loud mufflers / drag racing.", "sources": ["https://www.brooklynpaper.com/city-noise-camera-program-expands-bay-ridge/"]}, {"id": "bk-shore-rd-8329", "address": "8329 Shore Road", "neighborhood": "Bay Ridge", "borough": "Brooklyn", "lat": 40.621, "lng": -74.035, "status": "active", "confidence": "reported", "type": "noise/exhaust", "notes": "Added to Shore Road to address late-night quality-of-life concerns.", "sources": ["https://www.brooklynpaper.com/city-noise-camera-program-expands-bay-ridge/"]}]};</script>
+  <script>
+/* NYC Exhaust / Noise Camera Map
+ * Loads camera data from data/cameras.json and renders an interactive
+ * Leaflet map with filtering, search, a synced list panel, and popups. */
+(function () {
+  "use strict";
+
+  var NYC_CENTER = [40.7300, -73.9700];
+  var DEFAULT_ZOOM = 11;
+
+  var state = {
+    cameras: [],
+    meta: {},
+    markers: {},        // id -> Leaflet marker
+    boroughFilter: new Set(),
+    statusFilter: new Set(),
+    search: ""
+  };
+
+  var map, clusterGroup;
+  var els = {};
+
+  document.addEventListener("DOMContentLoaded", init);
+
+  function init() {
+    cacheEls();
+    initMap();
+    bindUI();
+    loadData();
+  }
+
+  function cacheEls() {
+    els.list = document.getElementById("camera-list");
+    els.count = document.getElementById("stat-count");
+    els.total = document.getElementById("stat-total");
+    els.search = document.getElementById("search");
+    els.boroughFilters = document.getElementById("borough-filters");
+    els.statusFilters = document.getElementById("status-filters");
+    els.disclaimer = document.getElementById("disclaimer");
+    els.sidebar = document.getElementById("sidebar");
+    els.sidebarToggle = document.getElementById("sidebar-toggle");
+    els.locateMe = document.getElementById("locate-me");
+  }
+
+  function initMap() {
+    map = L.map("map", { zoomControl: true }).setView(NYC_CENTER, DEFAULT_ZOOM);
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: "abcd",
+      maxZoom: 20
+    }).addTo(map);
+
+    clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 45,
+      showCoverageOnHover: false
+    });
+    map.addLayer(clusterGroup);
+  }
+
+  function bindUI() {
+    els.search.addEventListener("input", function (e) {
+      state.search = e.target.value.trim().toLowerCase();
+      render();
+    });
+
+    els.sidebarToggle.addEventListener("click", function () {
+      els.sidebar.classList.toggle("open");
+    });
+
+    els.locateMe.addEventListener("click", locateMe);
+  }
+
+  function loadData() {
+    // Standalone builds inline the dataset as window.__CAMERA_DATA__ so the
+    // page works from a file:// URL without a server. Otherwise fetch it.
+    if (window.__CAMERA_DATA__) {
+      handleData(window.__CAMERA_DATA__);
+      return;
+    }
+    fetch("data/cameras.json", { cache: "no-cache" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(handleData)
+      .catch(function (err) {
+        els.list.innerHTML =
+          '<li class="disclaimer">Could not load camera data (' +
+          escapeHtml(err.message) +
+          "). If you opened this file directly, run a local web server " +
+          "(e.g. <code>python3 -m http.server</code>) so the browser can fetch the JSON.</li>";
+      });
+  }
+
+  function handleData(data) {
+        state.cameras = (data.cameras || []).filter(hasValidCoords);
+        state.meta = data.meta || {};
+        buildFilters();
+        renderDisclaimer();
+        render();
+        if (state.cameras.length) {
+          var b = L.latLngBounds(state.cameras.map(function (c) { return [c.lat, c.lng]; }));
+          map.fitBounds(b.pad(0.15));
+        }
+  }
+
+  function hasValidCoords(c) {
+    return typeof c.lat === "number" && typeof c.lng === "number" &&
+      !isNaN(c.lat) && !isNaN(c.lng);
+  }
+
+  /* ---- Filters ---- */
+  function buildFilters() {
+    var boroughs = unique(state.cameras.map(function (c) { return c.borough; })).sort();
+    var statuses = unique(state.cameras.map(function (c) { return c.status; })).sort();
+
+    renderChips(els.boroughFilters, boroughs, state.boroughFilter);
+    renderChips(els.statusFilters, statuses, state.statusFilter);
+  }
+
+  function renderChips(container, values, activeSet) {
+    container.innerHTML = "";
+    values.forEach(function (val) {
+      var chip = document.createElement("button");
+      chip.className = "chip";
+      chip.textContent = cap(val);
+      chip.addEventListener("click", function () {
+        if (activeSet.has(val)) activeSet.delete(val);
+        else activeSet.add(val);
+        chip.classList.toggle("active");
+        render();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  function passesFilters(c) {
+    if (state.boroughFilter.size && !state.boroughFilter.has(c.borough)) return false;
+    if (state.statusFilter.size && !state.statusFilter.has(c.status)) return false;
+    if (state.search) {
+      var hay = [c.address, c.neighborhood, c.borough, c.notes]
+        .filter(Boolean).join(" ").toLowerCase();
+      if (hay.indexOf(state.search) === -1) return false;
+    }
+    return true;
+  }
+
+  /* ---- Render ---- */
+  function render() {
+    var visible = state.cameras.filter(passesFilters);
+    renderMarkers(visible);
+    renderList(visible);
+    els.count.textContent = visible.length;
+    els.total.textContent = state.meta.totalDeployedPerCity || state.cameras.length;
+  }
+
+  function renderMarkers(visible) {
+    clusterGroup.clearLayers();
+    state.markers = {};
+    visible.forEach(function (c) {
+      var marker = L.marker([c.lat, c.lng], { icon: makeIcon(c) });
+      marker.bindPopup(popupHtml(c), { maxWidth: 280 });
+      clusterGroup.addLayer(marker);
+      state.markers[c.id] = marker;
+    });
+  }
+
+  function makeIcon(c) {
+    var cls = c.status === "active" ? "active" : "reported";
+    return L.divIcon({
+      className: "",
+      html: '<div class="cam-marker ' + cls + '"><span>📷</span></div>',
+      iconSize: [30, 30],
+      iconAnchor: [15, 28],
+      popupAnchor: [0, -26]
+    });
+  }
+
+  function renderList(visible) {
+    els.list.innerHTML = "";
+    if (!visible.length) {
+      els.list.innerHTML = '<li class="disclaimer">No cameras match the current filters.</li>';
+      return;
+    }
+    visible.forEach(function (c) {
+      var li = document.createElement("li");
+      li.className = "camera-item";
+      var badgeClass = c.status === "active" ? "badge-active" : "badge-reported";
+      li.innerHTML =
+        '<div class="ci-addr">' + escapeHtml(c.address) + "</div>" +
+        '<div class="ci-meta">' +
+          escapeHtml(c.neighborhood || "") + " · " + escapeHtml(c.borough) +
+          ' <span class="ci-badge ' + badgeClass + '">' + escapeHtml(c.status) + "</span>" +
+        "</div>";
+      li.addEventListener("click", function () { focusCamera(c); });
+      els.list.appendChild(li);
+    });
+  }
+
+  function focusCamera(c) {
+    var marker = state.markers[c.id];
+    map.setView([c.lat, c.lng], 16, { animate: true });
+    if (marker) {
+      // markercluster: zoom to show the marker, then open popup
+      clusterGroup.zoomToShowLayer(marker, function () {
+        marker.openPopup();
+      });
+    }
+    if (window.innerWidth <= 760) els.sidebar.classList.remove("open");
+  }
+
+  function popupHtml(c) {
+    var badgeClass = c.status === "active" ? "badge-active" : "badge-reported";
+    var sources = (c.sources || []).map(function (url) {
+      return '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener">' +
+        escapeHtml(prettyUrl(url)) + "</a>";
+    }).join("");
+
+    return (
+      '<div class="cam-popup">' +
+        "<h3>" + escapeHtml(c.address) + "</h3>" +
+        '<div class="cp-sub">' + escapeHtml(c.neighborhood || "") + " · " + escapeHtml(c.borough) + "</div>" +
+        '<div class="cp-row">' +
+          '<span class="ci-badge ' + badgeClass + '">' + escapeHtml(c.status) + "</span>" +
+          '<span class="ci-badge badge-reported">' + escapeHtml(c.confidence || "reported") + "</span>" +
+          '<span class="ci-badge badge-reported">' + escapeHtml(c.type || "noise/exhaust") + "</span>" +
+        "</div>" +
+        (c.notes ? '<div class="cp-notes">' + escapeHtml(c.notes) + "</div>" : "") +
+        (sources ? '<div class="cp-sources"><strong>Sources:</strong>' + sources + "</div>" : "") +
+      "</div>"
+    );
+  }
+
+  function renderDisclaimer() {
+    var src = (state.meta.sources || []).map(function (s) {
+      return '<a href="' + escapeAttr(s.url) + '" target="_blank" rel="noopener">' +
+        escapeHtml(s.label) + "</a>";
+    }).join(" · ");
+
+    els.disclaimer.innerHTML =
+      "<p><strong>About this data.</strong> " +
+      escapeHtml(state.meta.description || "") + "</p>" +
+      (state.meta.lastUpdated ? "<p>Last updated: " + escapeHtml(state.meta.lastUpdated) + "</p>" : "") +
+      (src ? "<p>Sources: " + src + "</p>" : "") +
+      "<p>Spotted a camera or a mistake? Update " +
+      "<code>data/cameras.json</code> and open a pull request.</p>";
+  }
+
+  function locateMe() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    els.locateMe.textContent = "…";
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        var ll = [pos.coords.latitude, pos.coords.longitude];
+        map.setView(ll, 14);
+        L.circleMarker(ll, { radius: 8, color: "#4aa3ff", fillColor: "#4aa3ff", fillOpacity: 0.6 })
+          .addTo(map).bindPopup("You are here").openPopup();
+        els.locateMe.textContent = "📍 Near me";
+      },
+      function () {
+        alert("Could not get your location.");
+        els.locateMe.textContent = "📍 Near me";
+      }
+    );
+  }
+
+  /* ---- helpers ---- */
+  function unique(arr) {
+    return Array.from(new Set(arr.filter(Boolean)));
+  }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function prettyUrl(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ""); }
+    catch (e) { return url; }
+  }
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+})();
+
+  </script>
+</body>
+</html>

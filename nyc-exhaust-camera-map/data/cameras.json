@@ -1,0 +1,206 @@
+{
+  "meta": {
+    "title": "NYC Exhaust / Noise Camera Locations",
+    "description": "Crowdsourced and reported locations of NYC DEP roadside noise (loud exhaust / muffler) enforcement cameras. The City of New York does not publish exact camera locations, so these points are compiled from news reporting, public DEP documents, and community reports. Coordinates are approximate.",
+    "lastUpdated": "2026-05-29",
+    "coordinateAccuracy": "approximate",
+    "totalDeployedPerCity": 11,
+    "sources": [
+      {
+        "label": "NYC DEP Noise Camera Enforcement Program",
+        "url": "https://www.nyc.gov/site/dep/environment/noise-code.page"
+      },
+      {
+        "label": "DEP 2025 Annual Report for Noise Camera Enforcement Program (PDF)",
+        "url": "https://www.nyc.gov/assets/dep/downloads/pdf/air/noise/2025-annual-report-noise-camera-enforcement-program.pdf"
+      },
+      {
+        "label": "DEP 2024 Annual Report (PDF)",
+        "url": "https://www.nyc.gov/assets/dep/downloads/pdf/air/noise/2024-annual-report-noise-camera-enforcement-program.pdf"
+      },
+      {
+        "label": "Time Out NY — NYC's noise cameras explained",
+        "url": "https://www.timeout.com/newyork/news/nycs-noise-cameras-are-here-to-fine-you-everything-to-know-about-the-new-hidden-tech-091725"
+      },
+      {
+        "label": "Gothamist — crackdown on noisy drivers",
+        "url": "https://gothamist.com/news/accelerate-crackdown-on-noisy-drivers-with-ai-nyc-councilmember-says"
+      },
+      {
+        "label": "Brooklyn Paper — Bay Ridge noise camera",
+        "url": "https://www.brooklynpaper.com/city-noise-camera-program-expands-bay-ridge/"
+      },
+      {
+        "label": "Waze community thread — noise camera reports",
+        "url": "https://www.waze.com/discuss/t/noise-camera/365476"
+      }
+    ]
+  },
+  "cameras": [
+    {
+      "id": "mn-w41-lincoln",
+      "address": "510 West 41st Street (near Lincoln Tunnel)",
+      "neighborhood": "Hell's Kitchen",
+      "borough": "Manhattan",
+      "lat": 40.7585,
+      "lng": -73.9962,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Highest-violation camera in the program — reported to account for roughly 25% of all summonses (375+ violations over ~2 years).",
+      "sources": [
+        "https://www.timeout.com/newyork/news/nycs-noise-cameras-are-here-to-fine-you-everything-to-know-about-the-new-hidden-tech-091725"
+      ]
+    },
+    {
+      "id": "mn-e36",
+      "address": "210 East 36th Street",
+      "neighborhood": "Murray Hill",
+      "borough": "Manhattan",
+      "lat": 40.7459,
+      "lng": -73.9774,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Second-highest violation count in the program per DEP reporting.",
+      "sources": [
+        "https://www.timeout.com/newyork/news/nycs-noise-cameras-are-here-to-fine-you-everything-to-know-about-the-new-hidden-tech-091725"
+      ]
+    },
+    {
+      "id": "mn-w43",
+      "address": "545 West 43rd Street",
+      "neighborhood": "Hell's Kitchen",
+      "borough": "Manhattan",
+      "lat": 40.7607,
+      "lng": -73.9943,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Documented deployment site in community / news reporting.",
+      "sources": [
+        "https://www.waze.com/discuss/t/noise-camera/365476"
+      ]
+    },
+    {
+      "id": "mn-stnick-184",
+      "address": "St. Nicholas Avenue & West 184th Street",
+      "neighborhood": "Washington Heights",
+      "borough": "Manhattan",
+      "lat": 40.8513,
+      "lng": -73.9337,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Documented deployment site in community / news reporting.",
+      "sources": [
+        "https://www.waze.com/discuss/t/noise-camera/365476"
+      ]
+    },
+    {
+      "id": "mn-amsterdam-1808",
+      "address": "1808 Amsterdam Avenue (near W 150th St)",
+      "neighborhood": "Hamilton Heights",
+      "borough": "Manhattan",
+      "lat": 40.8254,
+      "lng": -73.9430,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Documented deployment site in community / news reporting.",
+      "sources": [
+        "https://www.waze.com/discuss/t/noise-camera/365476"
+      ]
+    },
+    {
+      "id": "mn-fortgeorge-hillside",
+      "address": "Fort George Avenue & Hillside Avenue",
+      "neighborhood": "Fort George / Inwood",
+      "borough": "Manhattan",
+      "lat": 40.8612,
+      "lng": -73.9270,
+      "status": "reported",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Community-reported deployment site.",
+      "sources": [
+        "https://www.waze.com/discuss/t/noise-camera/365476"
+      ]
+    },
+    {
+      "id": "qn-20ave-astoria",
+      "address": "36-11 20th Avenue",
+      "neighborhood": "Astoria",
+      "borough": "Queens",
+      "lat": 40.7770,
+      "lng": -73.9087,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Reported among Queens deployment sites (Astoria's 20th Avenue).",
+      "sources": [
+        "https://gothamist.com/news/accelerate-crackdown-on-noisy-drivers-with-ai-nyc-councilmember-says"
+      ]
+    },
+    {
+      "id": "qn-borden-lic",
+      "address": "Borden Avenue, Long Island City",
+      "neighborhood": "Long Island City",
+      "borough": "Queens",
+      "lat": 40.7410,
+      "lng": -73.9540,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Reported LIC deployment site (Borden Avenue).",
+      "sources": [
+        "https://gothamist.com/news/accelerate-crackdown-on-noisy-drivers-with-ai-nyc-councilmember-says"
+      ]
+    },
+    {
+      "id": "qn-horaceharding-flushing",
+      "address": "99-25 Horace Harding Expressway",
+      "neighborhood": "Flushing / Corona",
+      "borough": "Queens",
+      "lat": 40.7370,
+      "lng": -73.8590,
+      "status": "reported",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Community-reported deployment site.",
+      "sources": [
+        "https://www.waze.com/discuss/t/noise-camera/365476"
+      ]
+    },
+    {
+      "id": "bk-3ave-67",
+      "address": "6700 3rd Avenue",
+      "neighborhood": "Bay Ridge",
+      "borough": "Brooklyn",
+      "lat": 40.6356,
+      "lng": -74.0277,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Bay Ridge deployment targeting late-night loud mufflers / drag racing.",
+      "sources": [
+        "https://www.brooklynpaper.com/city-noise-camera-program-expands-bay-ridge/"
+      ]
+    },
+    {
+      "id": "bk-shore-rd-8329",
+      "address": "8329 Shore Road",
+      "neighborhood": "Bay Ridge",
+      "borough": "Brooklyn",
+      "lat": 40.6210,
+      "lng": -74.0350,
+      "status": "active",
+      "confidence": "reported",
+      "type": "noise/exhaust",
+      "notes": "Added to Shore Road to address late-night quality-of-life concerns.",
+      "sources": [
+        "https://www.brooklynpaper.com/city-noise-camera-program-expands-bay-ridge/"
+      ]
+    }
+  ]
+}
