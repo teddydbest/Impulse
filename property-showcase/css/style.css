@@ -1,0 +1,444 @@
+/* =====================================================================
+   Swan Landing — cinematic scroll showcase
+   Design system + scene styling + placeholder art.
+   Real photos are dropped into /assets and picked up automatically
+   (see js/main.js + README). No CDN, no external fonts.
+   ===================================================================== */
+
+:root{
+  --ink:        #0c0f12;
+  --ink-2:      #141a1f;
+  --bone:       #f4efe6;
+  --bone-dim:   #cfc7b8;
+  --gold:       #c9a86a;
+  --gold-soft:  #e4cf9f;
+  --sky-top:    #1a2b3d;
+  --sky-mid:    #4a5f74;
+  --sky-warm:   #d9a978;
+
+  --serif: "Cormorant Garamond","Playfair Display",Georgia,"Times New Roman",serif;
+  --sans:  -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+
+  --ease: cubic-bezier(.22,.61,.36,1);
+  --pad: clamp(1.25rem, 5vw, 5rem);
+}
+
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+
+html{ scroll-behavior:auto; }
+body{
+  background:var(--ink);
+  color:var(--bone);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  line-height:1.5;
+}
+a{ color:inherit; text-decoration:none; }
+img{ max-width:100%; display:block; }
+
+/* ---------- Typography ---------- */
+.display{
+  font-family:var(--serif);
+  font-weight:500;
+  letter-spacing:.005em;
+  line-height:.98;
+  font-size:clamp(3rem, 11vw, 10rem);
+}
+.display--sm{ font-size:clamp(2.2rem, 6vw, 4.6rem); line-height:1.02; }
+.eyebrow{
+  font-family:var(--sans);
+  text-transform:uppercase;
+  letter-spacing:.34em;
+  font-size:clamp(.62rem,1.1vw,.74rem);
+  color:var(--gold-soft);
+  font-weight:600;
+}
+
+/* =====================================================================
+   Preloader
+   ===================================================================== */
+.loader{
+  position:fixed; inset:0; z-index:200;
+  background:radial-gradient(120% 120% at 50% 40%, #16202b 0%, #0a0d10 70%);
+  display:grid; place-items:center;
+  transition:opacity .9s var(--ease), visibility .9s;
+}
+.loader.is-done{ opacity:0; visibility:hidden; pointer-events:none; }
+.loader__inner{ text-align:center; }
+.loader__mark{
+  font-family:var(--serif); font-size:2.4rem; color:var(--gold);
+  letter-spacing:.1em; opacity:.9;
+}
+.loader__name{
+  font-family:var(--serif); font-size:clamp(2rem,7vw,3.4rem);
+  margin:.2em 0 1.1em; letter-spacing:.02em;
+}
+.loader__bar{
+  width:min(260px,60vw); height:1px; margin:0 auto;
+  background:rgba(255,255,255,.12); overflow:hidden;
+}
+.loader__bar span{
+  display:block; height:100%; width:0%;
+  background:linear-gradient(90deg,var(--gold),var(--gold-soft));
+  transition:width .3s linear;
+}
+.loader__hint{
+  margin-top:1.2em; font-size:.66rem; letter-spacing:.32em;
+  text-transform:uppercase; color:var(--bone-dim); opacity:.6;
+}
+
+/* =====================================================================
+   Fixed chrome — nav + progress
+   ===================================================================== */
+.nav{
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:clamp(1rem,2.5vw,1.6rem) var(--pad);
+  mix-blend-mode:difference;
+  transition:transform .5s var(--ease);
+}
+.nav__brand{ display:flex; align-items:center; gap:.7em; }
+.nav__mark{
+  font-family:var(--serif); font-size:1.15rem; letter-spacing:.06em;
+  border:1px solid rgba(255,255,255,.6); border-radius:50%;
+  width:2.2em; height:2.2em; display:grid; place-items:center;
+}
+.nav__word{ font-family:var(--serif); font-size:1.15rem; letter-spacing:.08em; }
+.nav__links{ display:flex; gap:2.2em; }
+.nav__links a{
+  font-size:.72rem; letter-spacing:.22em; text-transform:uppercase;
+  opacity:.85; transition:opacity .3s;
+}
+.nav__links a:hover{ opacity:1; }
+.nav__cta{
+  font-size:.68rem; letter-spacing:.22em; text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.7); padding:.85em 1.4em; border-radius:2em;
+  transition:background .3s, color .3s;
+}
+.nav__cta:hover{ background:#fff; color:#000; mix-blend-mode:normal; }
+@media (max-width:760px){ .nav__links{ display:none; } .nav__word{ display:none; } }
+
+.progress{
+  position:fixed; left:0; right:0; bottom:0; height:2px; z-index:100;
+  background:rgba(255,255,255,.08);
+}
+.progress__bar{
+  display:block; height:100%; width:100%;
+  transform:scaleX(0); transform-origin:0 50%;
+  background:linear-gradient(90deg,var(--gold),var(--gold-soft));
+}
+
+/* =====================================================================
+   Acts — shared
+   ===================================================================== */
+.act{
+  position:relative;
+  height:100vh; height:100svh;
+  overflow:hidden;
+  display:flex; align-items:center;
+}
+.stage{ position:absolute; inset:0; }
+.stage--3d{ perspective:1400px; perspective-origin:50% 42%; }
+
+.layer{
+  position:absolute; inset:-4% -4%;
+  will-change:transform;
+  background-size:cover; background-position:center;
+}
+
+/* The photo layer: real image via --photo, elegant gradient fallback below.
+   Because it's a background-image, a missing file simply doesn't paint —
+   no broken-image icon — and the fallback shows through. */
+.scene__photo{
+  position:absolute; inset:0;
+  background-size:cover; background-position:center;
+  background-repeat:no-repeat;
+  background-image:var(--photo, none);
+}
+
+/* Cinematic colour grades layered over every scene */
+.grade{ position:absolute; inset:0; pointer-events:none; }
+.grade--vignette{ background:radial-gradient(120% 90% at 50% 42%, transparent 40%, rgba(6,9,12,.72) 100%); }
+/* Gentle cinematic vignette — deepens photo edges without crushing the
+   placeholder gradients to black. */
+.grade--warm{
+  background:radial-gradient(125% 105% at 50% 32%, transparent 52%, rgba(8,10,13,.6) 100%);
+}
+.grade--sun{ background:radial-gradient(90% 80% at 60% 25%, rgba(255,220,160,.28), transparent 55%),radial-gradient(120% 100% at 50% 50%, transparent 45%, rgba(6,10,14,.6) 100%); }
+.grade--dusk{ background:linear-gradient(180deg, rgba(20,32,48,.15) 0%, transparent 30%, rgba(8,14,22,.7) 100%); }
+
+/* =====================================================================
+   ACT 1 — Approach.  Placeholder facade built in CSS; a real
+   exterior photo on --facade covers it seamlessly.
+   ===================================================================== */
+.layer--sky{
+  background:
+    radial-gradient(80% 60% at 70% 18%, rgba(230,180,120,.55), transparent 60%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-warm) 100%);
+}
+.layer--house{ inset:-4%; }
+.scene__photo--facade{
+  --photo: url(../assets/exterior-front.jpg);
+  /* Fallback: a stylised modern-estate silhouette */
+  background-color:transparent;
+}
+.scene__photo--facade::after{
+  content:""; position:absolute; inset:0;
+  background-image:var(--photo);
+  background-size:cover; background-position:center bottom;
+}
+/* CSS facade fallback (sits *behind* any real photo layer) */
+.layer--house::before{
+  content:""; position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+  width:min(78%, 1100px); height:58%;
+  background:
+    linear-gradient(180deg,#2b333c,#1b2128);
+  border-radius:6px 6px 0 0;
+  box-shadow:0 -30px 80px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.04);
+  /* window grid */
+  -webkit-mask-image:none;
+}
+.layer--house::after{
+  content:""; position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+  width:min(78%, 1100px); height:58%;
+  background-image:
+    linear-gradient(90deg, transparent 46%, rgba(255,225,170,.16) 46%, rgba(255,225,170,.16) 54%, transparent 54%),
+    repeating-linear-gradient(90deg, rgba(255,225,170,.10) 0 3%, transparent 3% 11%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 16%);
+  background-position:center;
+  opacity:.9;
+  pointer-events:none;
+}
+/* Glowing front door within the facade */
+.façade-door{
+  position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+  width:clamp(70px, 7vw, 120px); height:clamp(150px, 17vh, 240px);
+  background:linear-gradient(180deg,#3a2b1c,#1c130a);
+  border:2px solid rgba(201,168,106,.5);
+  border-radius:60px 60px 0 0;
+  box-shadow:0 0 60px 10px rgba(230,180,110,.35), inset 0 0 30px rgba(0,0,0,.6);
+}
+.façade-door::before{
+  content:""; position:absolute; inset:14% 22%;
+  border:1px solid rgba(201,168,106,.35); border-radius:40px 40px 0 0;
+}
+.layer--fg{
+  inset:auto -4% -4% -4%; height:40%;
+  background:linear-gradient(180deg, transparent, rgba(6,10,8,.9) 60%, #05080a);
+}
+.layer--fg::before{
+  content:""; position:absolute; inset:auto 0 0 0; height:70%;
+  background:
+    radial-gradient(60% 100% at 20% 100%, rgba(18,30,20,.9), transparent 70%),
+    radial-gradient(60% 100% at 80% 100%, rgba(18,30,20,.9), transparent 70%);
+}
+
+.hero__title{
+  position:relative; z-index:5;
+  width:100%; padding:0 var(--pad); text-align:center;
+  transform:translateY(-2vh);
+}
+.hero__title .eyebrow{ margin-bottom:1.4em; }
+.hero__sub{
+  margin-top:1.2em; font-size:clamp(.95rem,1.7vw,1.25rem);
+  letter-spacing:.02em; color:var(--bone-dim);
+}
+
+.scroll-hint{
+  position:absolute; left:50%; bottom:clamp(1.4rem,4vh,2.6rem); transform:translateX(-50%);
+  z-index:5; display:flex; flex-direction:column; align-items:center; gap:.9em;
+  font-size:.62rem; letter-spacing:.32em; text-transform:uppercase; color:var(--bone-dim);
+}
+.scroll-hint__dot{
+  width:22px; height:36px; border:1px solid rgba(255,255,255,.4); border-radius:12px;
+  position:relative;
+}
+.scroll-hint__dot i{
+  position:absolute; left:50%; top:7px; transform:translateX(-50%);
+  width:3px; height:7px; border-radius:2px; background:var(--gold-soft);
+  animation:scrolldot 1.8s var(--ease) infinite;
+}
+@keyframes scrolldot{ 0%{opacity:0;transform:translate(-50%,0)} 30%{opacity:1} 70%{opacity:1} 100%{opacity:0;transform:translate(-50%,14px)} }
+
+/* =====================================================================
+   ACT 2 — Enter (the door opens in real 3D)
+   ===================================================================== */
+.act--enter{ background:#05070a; }
+.doorway{
+  position:absolute; left:50%; top:50%; translate:-50% -50%;
+  width:min(46vh, 60vw); aspect-ratio:1 / 1.9;
+  transform-style:preserve-3d;
+  will-change:transform;
+}
+.door__wall{
+  position:absolute; inset:-120% -160%;
+  background:
+    radial-gradient(60% 60% at 50% 30%, rgba(40,48,58,.7), transparent 70%),
+    linear-gradient(180deg,#171c22,#0a0d11);
+  transform:translateZ(-2px);
+}
+.door__interior{
+  position:absolute; inset:0; overflow:hidden;
+  background:radial-gradient(80% 100% at 50% 40%, #3a2c1a, #14100a 75%);
+  transform:translateZ(-1px);
+}
+.door__interior .scene__photo{ --photo:url(../assets/foyer.jpg); }
+.door__glow{
+  position:absolute; inset:0;
+  background:radial-gradient(70% 80% at 50% 35%, rgba(255,210,140,.55), transparent 65%);
+  opacity:0; will-change:opacity;
+}
+.door__frame{
+  position:absolute; inset:0;
+  border:6px solid #0e1216;
+  box-shadow:0 0 0 2px rgba(201,168,106,.25), 0 40px 120px rgba(0,0,0,.7);
+  transform-style:preserve-3d;
+}
+.door__panel{
+  position:absolute; inset:0;
+  transform-origin:left center;
+  transform:rotateY(0deg);
+  will-change:transform;
+  background:
+    linear-gradient(180deg,#2c2013,#1a1109);
+  border:1px solid rgba(201,168,106,.4);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.6);
+  backface-visibility:hidden;
+}
+.door__grid{
+  position:absolute; inset:9% 14%;
+  background-image:repeating-linear-gradient(0deg, rgba(201,168,106,.22) 0 1px, transparent 1px 25%),
+                   repeating-linear-gradient(90deg, rgba(201,168,106,.22) 0 1px, transparent 1px 50%);
+  border:1px solid rgba(201,168,106,.28);
+}
+.door__knob{
+  position:absolute; right:9%; top:50%; width:12px; height:12px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, var(--gold-soft), #7a5f2f);
+  box-shadow:0 0 12px rgba(230,190,120,.6);
+}
+.enter__caption{
+  position:absolute; left:0; right:0; bottom:clamp(2rem,7vh,5rem);
+  text-align:center; z-index:5; padding:0 var(--pad);
+  will-change:transform,opacity;
+}
+
+/* =====================================================================
+   ACT 3/4 — Rooms & backyard
+   ===================================================================== */
+.scene{ position:absolute; inset:0; overflow:hidden; will-change:transform,filter,opacity; }
+.act--room .scene__photo,
+.act--backyard .scene__photo{ inset:-6%; } /* room for ken-burns */
+
+/* Each interior gets a distinct, softly-lit placeholder tone (a warm/cool
+   "room awaiting its photo" look). A real photo covers the gradients. */
+.act--room[data-room="foyer"]       .scene__photo{ --photo:url(../assets/foyer.jpg);       background-image:var(--photo),radial-gradient(80% 70% at 52% 30%, #7a6038, transparent 66%),linear-gradient(150deg,#4a3a22 0%,#241a10 60%,#140d07 100%); }
+.act--room[data-room="great-room"]  .scene__photo{ --photo:url(../assets/great-room.jpg);  background-image:var(--photo),radial-gradient(75% 70% at 62% 34%, #6a6154, transparent 64%),linear-gradient(150deg,#4a463f 0%,#2a2b2f 55%,#16181c 100%); }
+.act--room[data-room="kitchen"]     .scene__photo{ --photo:url(../assets/kitchen.jpg);     background-image:var(--photo),radial-gradient(80% 70% at 45% 28%, #8a877e, transparent 66%),linear-gradient(150deg,#5c5a54 0%,#34332f 55%,#1a1a19 100%); }
+.act--room[data-room="primary"]     .scene__photo{ --photo:url(../assets/primary.jpg);     background-image:var(--photo),radial-gradient(78% 70% at 58% 30%, #6a5a70, transparent 64%),linear-gradient(150deg,#463a4c 0%,#281f2c 55%,#140f18 100%); }
+.act--backyard .scene__photo{        --photo:url(../assets/backyard.jpg);   background-image:var(--photo),linear-gradient(160deg,#3b5165 0%,#20303f 45%,#132029 100%); }
+.act--view .layer--water .scene__photo{ --photo:url(../assets/waterfront.jpg); background-image:var(--photo),linear-gradient(180deg,#24384e 0%,#3c5a72 40%,#c8a678 100%); }
+
+/* subtle placeholder texture so empty scenes still read as a "photo" */
+.scene__photo::before{
+  content:""; position:absolute; inset:0;
+  background-image:
+    radial-gradient(120% 90% at 30% 20%, rgba(255,255,255,.06), transparent 55%),
+    radial-gradient(90% 90% at 80% 90%, rgba(0,0,0,.35), transparent 60%);
+  opacity:.9;
+}
+
+.room__info{
+  position:relative; z-index:5;
+  max-width:min(560px, 82vw);
+  padding:0 var(--pad);
+  will-change:transform,opacity;
+}
+.room__info .eyebrow{ margin-bottom:1em; }
+.room__info--right{ margin-left:auto; text-align:right; }
+.room__info--center{ margin:0 auto; text-align:center; }
+.room__text{
+  margin-top:1.2em; font-size:clamp(1rem,1.5vw,1.18rem);
+  color:var(--bone-dim); line-height:1.65; max-width:46ch;
+}
+.room__info--right .room__text{ margin-left:auto; }
+.room__text--center{ margin-left:auto; margin-right:auto; }
+
+/* =====================================================================
+   ACT 5 — The view / pull-back
+   ===================================================================== */
+.act--view .stage{ display:flex; align-items:center; justify-content:center; }
+.scene--view{ transform-origin:50% 55%; }
+.layer--water{ position:absolute; inset:-8%; will-change:transform; }
+.view__caption{
+  position:relative; z-index:5; width:100%; text-align:center;
+  padding:0 var(--pad); will-change:transform,opacity;
+}
+.view__caption .display{ font-size:clamp(2.6rem,7vw,6.2rem); }
+.view__caption .eyebrow{ margin-bottom:1.2em; }
+.view__caption .room__text{ margin-top:1.4em; }
+
+/* =====================================================================
+   Details + CTA
+   ===================================================================== */
+.details{
+  position:relative; z-index:5;
+  background:linear-gradient(180deg,#05080a,#0c1116);
+  padding:clamp(5rem,14vh,11rem) var(--pad) clamp(3rem,8vh,6rem);
+  text-align:center;
+}
+.details__head .eyebrow{ margin-bottom:1.2em; }
+.details__addr{ margin-top:1em; color:var(--bone-dim); letter-spacing:.04em; }
+
+.stats{
+  display:grid; grid-template-columns:repeat(6,1fr);
+  gap:clamp(1rem,2.5vw,2.4rem);
+  max-width:1000px; margin:clamp(3rem,7vh,5rem) auto;
+  border-top:1px solid rgba(255,255,255,.1);
+  border-bottom:1px solid rgba(255,255,255,.1);
+  padding:clamp(1.8rem,4vh,3rem) 0;
+}
+.stat{ display:flex; flex-direction:column; gap:.5em; }
+.stat__num{ font-family:var(--serif); font-size:clamp(1.7rem,3.4vw,2.9rem); color:var(--gold-soft); line-height:1; }
+.stat__label{ font-size:.6rem; letter-spacing:.24em; text-transform:uppercase; color:var(--bone-dim); }
+@media (max-width:760px){ .stats{ grid-template-columns:repeat(3,1fr); } }
+
+.details__body{ max-width:680px; margin:0 auto; }
+.details__body p{ margin-bottom:1.3em; font-size:clamp(1rem,1.5vw,1.15rem); color:#d8d1c4; line-height:1.75; }
+.details__body strong{ color:var(--bone); font-weight:600; }
+
+.cta{ margin-top:clamp(2.6rem,6vh,4rem); display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+.btn{
+  display:inline-block; padding:1.05em 2.2em; border-radius:2.4em;
+  background:linear-gradient(120deg,var(--gold),var(--gold-soft)); color:#1a130a;
+  font-size:.74rem; letter-spacing:.2em; text-transform:uppercase; font-weight:700;
+  transition:transform .3s var(--ease), box-shadow .3s;
+  box-shadow:0 12px 40px rgba(201,168,106,.28);
+}
+.btn:hover{ transform:translateY(-3px); box-shadow:0 18px 50px rgba(201,168,106,.4); }
+.btn--ghost{
+  background:transparent; color:var(--bone); border:1px solid rgba(255,255,255,.3);
+  box-shadow:none;
+}
+.btn--ghost:hover{ background:rgba(255,255,255,.06); box-shadow:none; }
+
+.foot{
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:.6em;
+  padding:2.4rem var(--pad); border-top:1px solid rgba(255,255,255,.08);
+  background:#05080a; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--bone-dim);
+}
+
+/* Reveal-on-scroll (details section) */
+.reveal{ opacity:0; transform:translateY(38px); transition:opacity .9s var(--ease), transform .9s var(--ease); }
+.reveal.is-in{ opacity:1; transform:none; }
+
+/* =====================================================================
+   Reduced motion — everything static & legible, no pinning
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce){
+  .act{ height:auto; min-height:70vh; padding:14vh var(--pad); }
+  .scroll-hint,.scroll-hint__dot i{ animation:none; }
+  .door__panel{ transform:rotateY(-95deg); }
+  .reveal{ opacity:1; transform:none; }
+}

@@ -1,0 +1,15 @@
+# Swan Landing — image URLs
+# Paste ONE direct image URL per line, in this exact order.
+# A blank line keeps the built-in placeholder for that scene.
+# Lines starting with # are ignored.
+#
+#  line 1  →  exterior-front   (front of the house / façade — the landing shot)
+#  line 2  →  foyer            (entry / staircase — seen through the door)
+#  line 3  →  great-room       (living room)
+#  line 4  →  kitchen
+#  line 5  →  primary          (primary bedroom / suite)
+#  line 6  →  backyard         (pool / patio / grounds)
+#  line 7  →  waterfront       (the water view / dock — the pull-back)
+#
+# Then run:  node scripts/fetch-images.mjs
+

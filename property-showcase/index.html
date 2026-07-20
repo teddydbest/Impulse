@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Swan Landing · 227 Dock Lane, Great Neck</title>
+  <meta name="description" content="A cinematic scroll journey through Swan Landing — a waterfront estate on Long Island's Gold Coast." />
+  <link rel="preconnect" href="/" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%9B%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+
+  <!-- ===== Preloader ===== -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__inner">
+      <div class="loader__mark">SL</div>
+      <div class="loader__name">Swan&nbsp;Landing</div>
+      <div class="loader__bar"><span id="loaderBar"></span></div>
+      <div class="loader__hint">Great Neck · New York</div>
+    </div>
+  </div>
+
+  <!-- ===== Fixed chrome ===== -->
+  <header class="nav" id="nav">
+    <a class="nav__brand" href="#top">
+      <span class="nav__mark">SL</span>
+      <span class="nav__word">Swan Landing</span>
+    </a>
+    <nav class="nav__links">
+      <a href="#interior">Residence</a>
+      <a href="#grounds">Grounds</a>
+      <a href="#details">Details</a>
+    </nav>
+    <a class="nav__cta" href="#details">Private Showing</a>
+  </header>
+
+  <div class="progress" aria-hidden="true"><span class="progress__bar" id="progressBar"></span></div>
+
+  <main id="app">
+    <span id="top"></span>
+
+    <!-- ===================================================== -->
+    <!-- ACT 1 — APPROACH : the front door, then dolly forward -->
+    <!-- ===================================================== -->
+    <section class="act act--approach" id="approach" data-scene="Arrival">
+      <div class="stage">
+        <div class="layer layer--sky"   data-depth="0.15"></div>
+        <div class="layer layer--house" data-depth="0.55"><div class="scene__photo scene__photo--facade"></div></div>
+        <div class="layer layer--door"  data-depth="0.9"><div class="façade-door"></div></div>
+        <div class="layer layer--fg"     data-depth="1.3"></div>
+        <div class="grade grade--vignette"></div>
+      </div>
+
+      <div class="hero__title">
+        <p class="eyebrow">227 Dock Lane · Kings Point</p>
+        <h1 class="display">Swan&nbsp;Landing</h1>
+        <p class="hero__sub">A waterfront estate on Long Island's Gold Coast</p>
+      </div>
+
+      <div class="scroll-hint" id="scrollHint">
+        <span>Scroll to enter</span>
+        <span class="scroll-hint__dot"><i></i></span>
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- ACT 2 — ENTER : the door swings open, we pass through  -->
+    <!-- ===================================================== -->
+    <section class="act act--enter" id="enter" data-scene="Threshold">
+      <div class="stage stage--3d">
+        <div class="doorway">
+          <div class="door__wall"></div>
+          <div class="door__interior"><div class="scene__photo" data-photo="foyer"></div><span class="door__glow"></span></div>
+          <div class="door__frame">
+            <div class="door__panel">
+              <span class="door__grid"></span>
+              <span class="door__knob"></span>
+            </div>
+          </div>
+        </div>
+        <div class="enter__caption">
+          <p class="eyebrow">Step inside</p>
+          <h2 class="display display--sm">23,000 square feet, unfolding</h2>
+        </div>
+      </div>
+    </section>
+
+    <span id="interior"></span>
+
+    <!-- ===================================================== -->
+    <!-- ACT 3 — INTERIOR : a walk through the principal rooms -->
+    <!-- ===================================================== -->
+    <section class="act act--room" data-room="foyer" data-scene="Grand Foyer">
+      <div class="scene"><div class="scene__photo" data-photo="foyer"></div><div class="grade grade--warm"></div></div>
+      <div class="room__info">
+        <p class="eyebrow">01 — Arrival</p>
+        <h2 class="display display--sm">The Grand Foyer</h2>
+        <p class="room__text">A double-height entry crowned by a sweeping staircase and a hand-blown chandelier, drawing the eye straight through to the water beyond.</p>
+      </div>
+    </section>
+
+    <section class="act act--room" data-room="great-room" data-scene="Great Room">
+      <div class="scene"><div class="scene__photo" data-photo="great-room"></div><div class="grade grade--warm"></div></div>
+      <div class="room__info room__info--right">
+        <p class="eyebrow">02 — Gather</p>
+        <h2 class="display display--sm">The Great Room</h2>
+        <p class="room__text">Twelve-foot ceilings, a carved limestone fireplace, and a wall of glass that dissolves the line between salon and sound.</p>
+      </div>
+    </section>
+
+    <section class="act act--room" data-room="kitchen" data-scene="Chef's Kitchen">
+      <div class="scene"><div class="scene__photo" data-photo="kitchen"></div><div class="grade grade--warm"></div></div>
+      <div class="room__info">
+        <p class="eyebrow">03 — Craft</p>
+        <h2 class="display display--sm">The Chef's Kitchen</h2>
+        <p class="room__text">Honed marble, dual islands, and professional appointments — a working kitchen that still knows how to hold a party.</p>
+      </div>
+    </section>
+
+    <section class="act act--room" data-room="primary" data-scene="Primary Suite">
+      <div class="scene"><div class="scene__photo" data-photo="primary"></div><div class="grade grade--warm"></div></div>
+      <div class="room__info room__info--right">
+        <p class="eyebrow">04 — Retreat</p>
+        <h2 class="display display--sm">The Primary Suite</h2>
+        <p class="room__text">A private wing with a sitting room, dual dressing rooms, and a terrace that opens to the morning light off the water.</p>
+      </div>
+    </section>
+
+    <span id="grounds"></span>
+
+    <!-- ===================================================== -->
+    <!-- ACT 4 — BACKYARD : out to the pool & the grounds       -->
+    <!-- ===================================================== -->
+    <section class="act act--backyard" id="backyard" data-scene="The Grounds">
+      <div class="scene"><div class="scene__photo" data-photo="backyard"></div><div class="grade grade--sun"></div></div>
+      <div class="room__info room__info--center">
+        <p class="eyebrow">05 — Outdoors</p>
+        <h2 class="display display--sm">Pool, Terrace &amp; Gardens</h2>
+        <p class="room__text">More than five landscaped acres roll toward the shore — a heated pool, stone terraces, and lawns made for long summer evenings.</p>
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- ACT 5 — THE VIEW : pull all the way back to the water  -->
+    <!-- ===================================================== -->
+    <section class="act act--view" id="view" data-scene="The Water">
+      <div class="stage stage--3d">
+        <div class="scene scene--view">
+          <div class="layer layer--water"><div class="scene__photo" data-photo="waterfront"></div></div>
+          <div class="grade grade--dusk"></div>
+        </div>
+        <div class="view__caption">
+          <p class="eyebrow">Manhasset Bay</p>
+          <h2 class="display">Where the lawn<br />meets the water</h2>
+          <p class="room__text room__text--center">A private dock, a sand beach, and open water to the horizon — the estate turns its whole face to the sound.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================== -->
+    <!-- DETAILS + CTA                                          -->
+    <!-- ===================================================== -->
+    <section class="details" id="details">
+      <div class="details__head reveal">
+        <p class="eyebrow">The Residence</p>
+        <h2 class="display display--sm">Swan Landing</h2>
+        <p class="details__addr">227 Dock Lane · Great Neck (Kings Point), New York 11024</p>
+      </div>
+
+      <div class="stats reveal">
+        <div class="stat"><span class="stat__num" data-count="40" data-prefix="$" data-suffix="M">$40M</span><span class="stat__label">Offered At</span></div>
+        <div class="stat"><span class="stat__num" data-count="13">13</span><span class="stat__label">Bedrooms</span></div>
+        <div class="stat"><span class="stat__num" data-count="14">14</span><span class="stat__label">Baths</span></div>
+        <div class="stat"><span class="stat__num" data-count="23000">23,000</span><span class="stat__label">Sq&nbsp;Ft</span></div>
+        <div class="stat"><span class="stat__num" data-count="5.4" data-decimals="1">5.4</span><span class="stat__label">Acres</span></div>
+        <div class="stat"><span class="stat__num">∞</span><span class="stat__label">Waterfront</span></div>
+      </div>
+
+      <div class="details__body reveal">
+        <p>Set on more than five pristine acres along Long Island's storied North Shore, <strong>Swan Landing</strong> is a custom waterfront estate of extraordinary scale and craft. Twenty-three thousand square feet of formal and family living open onto Manhasset Bay through walls of glass, while the grounds descend past a heated pool and stone terraces to a private beach and deep-water dock.</p>
+        <p>Thirteen bedrooms and fourteen baths, a chef's kitchen, a paneled library, and a private primary wing — every room is composed around the light and the water. This is a rare offering on one of the Gold Coast's most coveted lanes.</p>
+      </div>
+
+      <div class="cta reveal">
+        <a class="btn" href="mailto:hello@example.com?subject=Private%20Showing%20—%20Swan%20Landing">Request a Private Showing</a>
+        <a class="btn btn--ghost" href="https://www.zillow.com/homedetails/227-Dock-Ln-Great-Neck-NY-11024/31065772_zpid/" target="_blank" rel="noopener">View the Listing</a>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>Swan Landing · 227 Dock Lane, Great Neck, NY</span>
+      <span>Presented for private viewing</span>
+    </footer>
+  </main>
+
+  <!-- Vendored, no CDN -->
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/ScrollTrigger.min.js"></script>
+  <script src="vendor/lenis.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
