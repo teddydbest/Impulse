@@ -100,6 +100,79 @@
   /* ---------- Depth parallax within the hero (before pinning) ---------- */
   // (handled inside the approach timeline below)
 
+  /* ---------- Higgsfield-hosted clip URLs (used until self-hosted in /assets/clips) ----------
+     Generated with Kling 3.0 Pro from each room's real photo. If a matching file exists
+     in assets/clips/<name>.mp4 the site prefers that (see setupClips); otherwise it streams
+     from this CDN so the motion works with no extra setup. */
+  const CLIP_CDN = {
+    "exterior.mp4":    "https://d8j0ntlcm91z4.cloudfront.net/user_3GMlQ1a8asLkV2qJWhGfwh9mU45/hf_20260723_213004_6b4fcdc8-ce22-4f5c-9a1d-bf8e5fa635f0.mp4",
+    "foyer.mp4":       "https://d8j0ntlcm91z4.cloudfront.net/user_3GMlQ1a8asLkV2qJWhGfwh9mU45/hf_20260723_212848_e9ee5dde-0ea8-462a-a390-f7df639748b6.mp4",
+    "great-room.mp4":  "https://d8j0ntlcm91z4.cloudfront.net/user_3GMlQ1a8asLkV2qJWhGfwh9mU45/hf_20260723_212852_72bb26bd-bbae-4380-8e69-c88b8aded961.mp4",
+    "kitchen.mp4":     "https://d8j0ntlcm91z4.cloudfront.net/user_3GMlQ1a8asLkV2qJWhGfwh9mU45/hf_20260723_212919_08ec4d83-3059-4571-8efd-65ed9ec8a9a9.mp4",
+    "garden-room.mp4": "https://d8j0ntlcm91z4.cloudfront.net/user_3GMlQ1a8asLkV2qJWhGfwh9mU45/hf_20260723_212937_d7f8f5c9-84c8-495f-aa40-ee5c58fd95ae.mp4",
+    "backyard.mp4":    "https://d8j0ntlcm91z4.cloudfront.net/user_3GMlQ1a8asLkV2qJWhGfwh9mU45/hf_20260723_212944_f7b9fb68-9805-4a26-8fdc-162f29794573.mp4",
+    "waterfront.mp4":  "https://d8j0ntlcm91z4.cloudfront.net/user_3GMlQ1a8asLkV2qJWhGfwh9mU45/hf_20260723_212946_ce913111-2e44-4ae1-8525-b5040938aa99.mp4",
+  };
+
+  /* ---------- Scroll length of each pinned act (must match the pins below) ---------- */
+  function actLen(el) {
+    if (el.id === "approach") return "+=160%";
+    if (el.id === "enter") return "+=220%";
+    if (el.id === "view") return "+=170%";
+    return "+=130%"; // rooms + backyard
+  }
+
+  /* ---------- Cinematic clips: seek each video by its act's scroll progress ----------
+     The still <img>/poster stays visible until the clip can actually decode; if a clip
+     is missing or the browser can't play it, the real photo simply remains. */
+  function setupClips() {
+    document.querySelectorAll("video[data-clip]").forEach((v) => {
+      const act = v.closest(".act");
+      const srcEl = v.querySelector("source");
+      const local = srcEl ? srcEl.getAttribute("src") : null;
+      const cdn = local ? CLIP_CDN[local.split("/").pop()] : null;
+
+      const reveal = () => { if (v.readyState >= 2) v.classList.add("is-ready"); };
+      v.addEventListener("loadeddata", reveal);
+      v.addEventListener("canplay", reveal);
+
+      function attachScrub() {
+        if (!act) return;
+        ST.create({
+          trigger: act,
+          start: "top top",
+          end: actLen(act),
+          scrub: true,
+          onUpdate: (self) => {
+            const d = v.duration;
+            if (v.readyState >= 1 && isFinite(d) && d > 0) {
+              const t = Math.min(d - 0.05, self.progress * d);
+              if (Math.abs(v.currentTime - t) > 0.015) {
+                try { v.currentTime = t; } catch (e) { /* seek not ready yet */ }
+              }
+            }
+          },
+        });
+      }
+
+      function toCdn() { if (cdn) { v.innerHTML = ""; v.src = cdn; } }
+
+      // Prefer a self-hosted clip in /assets/clips; fall back to the Higgsfield CDN.
+      if (local) {
+        fetch(local, { method: "HEAD" })
+          .then((r) => { if (!r.ok) toCdn(); })
+          .catch(() => toCdn())
+          .finally(() => { try { v.load(); } catch (e) {} attachScrub(); });
+      } else if (cdn) {
+        v.src = cdn;
+        try { v.load(); } catch (e) {}
+        attachScrub();
+      } else {
+        attachScrub();
+      }
+    });
+  }
+
   function build() {
     /* ---- ACT 1 · APPROACH — dolly forward toward the door ---- */
     const t1 = gsap.timeline({
@@ -159,14 +232,15 @@
           anticipatePin: 1,
         },
       });
-      // enter the room (starts pushed-in + soft), settle, then keep drifting forward
+      // Gentle settle on entry — the clip itself supplies the forward motion,
+      // so the container move stays subtle (and looks right on the still poster too).
       tl.fromTo(
         scene,
-        { scale: 1.28, filter: "blur(9px)", autoAlpha: 0.25 },
-        { scale: 1.08, filter: "blur(0px)", autoAlpha: 1, ease: "power2.out", duration: 0.5 },
+        { scale: 1.06, autoAlpha: 0.35 },
+        { scale: 1.02, autoAlpha: 1, ease: "power2.out", duration: 0.5 },
         0
       )
-        .to(scene, { scale: 1.18, ease: "none", duration: 0.5 }, 0.5)
+        .to(scene, { scale: 1.0, ease: "none", duration: 0.5 }, 0.5)
         .fromTo(
           info,
           { y: 46, autoAlpha: 0 },
@@ -208,6 +282,7 @@
       scrollTrigger: { trigger: doc.body, start: "top top", end: "bottom bottom", scrub: 0.3 },
     });
 
+    setupClips();
     initReveals();
     ST.refresh();
   }

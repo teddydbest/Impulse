@@ -179,7 +179,7 @@ img{ max-width:100%; display:block; }
 }
 .layer--house{ inset:-4%; }
 .scene__photo--facade{
-  --photo: url(../assets/exterior-front.jpg);
+  --photo: url(../assets/exterior-front2.jpeg);
   /* Fallback: a stylised modern-estate silhouette */
   background-color:transparent;
 }
@@ -283,7 +283,7 @@ img{ max-width:100%; display:block; }
   background:radial-gradient(80% 100% at 50% 40%, #3a2c1a, #14100a 75%);
   transform:translateZ(-1px);
 }
-.door__interior .scene__photo{ --photo:url(../assets/foyer.jpg); }
+.door__interior .scene__photo{ --photo:url(../assets/foyer.jpeg); }
 .door__glow{
   position:absolute; inset:0;
   background:radial-gradient(70% 80% at 50% 35%, rgba(255,210,140,.55), transparent 65%);
@@ -332,12 +332,24 @@ img{ max-width:100%; display:block; }
 
 /* Each interior gets a distinct, softly-lit placeholder tone (a warm/cool
    "room awaiting its photo" look). A real photo covers the gradients. */
-.act--room[data-room="foyer"]       .scene__photo{ --photo:url(../assets/foyer.jpg);       background-image:var(--photo),radial-gradient(80% 70% at 52% 30%, #7a6038, transparent 66%),linear-gradient(150deg,#4a3a22 0%,#241a10 60%,#140d07 100%); }
-.act--room[data-room="great-room"]  .scene__photo{ --photo:url(../assets/great-room.jpg);  background-image:var(--photo),radial-gradient(75% 70% at 62% 34%, #6a6154, transparent 64%),linear-gradient(150deg,#4a463f 0%,#2a2b2f 55%,#16181c 100%); }
-.act--room[data-room="kitchen"]     .scene__photo{ --photo:url(../assets/kitchen.jpg);     background-image:var(--photo),radial-gradient(80% 70% at 45% 28%, #8a877e, transparent 66%),linear-gradient(150deg,#5c5a54 0%,#34332f 55%,#1a1a19 100%); }
-.act--room[data-room="primary"]     .scene__photo{ --photo:url(../assets/primary.jpg);     background-image:var(--photo),radial-gradient(78% 70% at 58% 30%, #6a5a70, transparent 64%),linear-gradient(150deg,#463a4c 0%,#281f2c 55%,#140f18 100%); }
-.act--backyard .scene__photo{        --photo:url(../assets/backyard.jpg);   background-image:var(--photo),linear-gradient(160deg,#3b5165 0%,#20303f 45%,#132029 100%); }
-.act--view .layer--water .scene__photo{ --photo:url(../assets/waterfront.jpg); background-image:var(--photo),linear-gradient(180deg,#24384e 0%,#3c5a72 40%,#c8a678 100%); }
+.act--room[data-room="foyer"]       .scene__photo{ --photo:url(../assets/foyer.jpeg);       background-image:var(--photo),radial-gradient(80% 70% at 52% 30%, #7a6038, transparent 66%),linear-gradient(150deg,#4a3a22 0%,#241a10 60%,#140d07 100%); }
+.act--room[data-room="great-room"]  .scene__photo{ --photo:url(../assets/great-room1.jpeg);  background-image:var(--photo),radial-gradient(75% 70% at 62% 34%, #6a6154, transparent 64%),linear-gradient(150deg,#4a463f 0%,#2a2b2f 55%,#16181c 100%); }
+.act--room[data-room="kitchen"]     .scene__photo{ --photo:url(../assets/kitchen1.jpeg);     background-image:var(--photo),radial-gradient(80% 70% at 45% 28%, #8a877e, transparent 66%),linear-gradient(150deg,#5c5a54 0%,#34332f 55%,#1a1a19 100%); }
+.act--room[data-room="garden-room"] .scene__photo{ --photo:url(../assets/kitchen3.jpeg);     background-image:var(--photo),radial-gradient(78% 70% at 55% 30%, #7a8a6a, transparent 64%),linear-gradient(150deg,#48513c 0%,#28301f 55%,#141a10 100%); }
+.act--backyard .scene__photo{        --photo:url(../assets/backyard.jpeg);   background-image:var(--photo),linear-gradient(160deg,#3b5165 0%,#20303f 45%,#132029 100%); }
+.act--view .layer--water .scene__photo{ --photo:url(../assets/waterfront.jpeg); background-image:var(--photo),linear-gradient(180deg,#24384e 0%,#3c5a72 40%,#c8a678 100%); }
+
+/* Cinematic clips (Higgsfield) layered over each scene's still poster.
+   If a clip is missing or can't decode, the still photo below shows through. */
+.scene__clip{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center;
+  z-index:1; opacity:0; transition:opacity .6s var(--ease);
+  pointer-events:none; background:transparent;
+}
+.scene__clip.is-ready{ opacity:1; }
+.act--approach .layer--house .scene__clip{ object-position:center 42%; }
+.act--view .layer--water .scene__clip{ object-position:center 45%; }
 
 /* subtle placeholder texture so empty scenes still read as a "photo" */
 .scene__photo::before{
@@ -432,6 +444,33 @@ img{ max-width:100%; display:block; }
 /* Reveal-on-scroll (details section) */
 .reveal{ opacity:0; transform:translateY(38px); transition:opacity .9s var(--ease), transform .9s var(--ease); }
 .reveal.is-in{ opacity:1; transform:none; }
+
+/* =====================================================================
+   Legibility over bright photos / video clips
+   ===================================================================== */
+.display, .hero__sub, .room__text, .details__addr,
+.enter__caption .eyebrow, .view__caption .eyebrow, .room__info .eyebrow, .hero__title .eyebrow{
+  text-shadow:0 2px 28px rgba(4,7,10,.55), 0 1px 4px rgba(4,7,10,.45);
+}
+/* Soft scrim anchored to the text side so copy stays readable while the
+   photo/clip still reads through the rest of the frame. */
+.room__info, .hero__title, .view__caption{ position:relative; }
+.room__info::before{
+  content:""; position:absolute; inset:-10% -14% -10% -45%; z-index:-1; pointer-events:none;
+  background:radial-gradient(120% 105% at 0% 50%, rgba(5,8,11,.72), rgba(5,8,11,.32) 46%, transparent 72%);
+}
+.room__info--right::before{
+  inset:-10% -45% -10% -14%;
+  background:radial-gradient(120% 105% at 100% 50%, rgba(5,8,11,.72), rgba(5,8,11,.32) 46%, transparent 72%);
+}
+.room__info--center::before{
+  inset:-14% -18%;
+  background:radial-gradient(85% 100% at 50% 50%, rgba(5,8,11,.6), transparent 74%);
+}
+.hero__title::before, .view__caption::before{
+  content:""; position:absolute; inset:-40% -12%; z-index:-1; pointer-events:none;
+  background:radial-gradient(72% 82% at 50% 50%, rgba(5,8,11,.5), transparent 72%);
+}
 
 /* =====================================================================
    Reduced motion — everything static & legible, no pinning
