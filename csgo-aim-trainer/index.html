@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>DUST STRIKE — Aim Trainer</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Resolve bare "three" import used by PointerLockControls to the vendored module -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- 3D canvas is created by the engine and appended to #game -->
+  <div id="game"></div>
+
+  <!-- ===================== HUD ===================== -->
+  <div id="hud" class="hidden">
+    <!-- Crosshair -->
+    <div id="crosshair">
+      <span class="ch top"></span>
+      <span class="ch bottom"></span>
+      <span class="ch left"></span>
+      <span class="ch right"></span>
+      <span class="ch dot"></span>
+    </div>
+    <div id="hitmarker"></div>
+
+    <!-- Top center: wave / round banner -->
+    <div id="wave-banner"></div>
+
+    <!-- Top left: score & stats -->
+    <div id="topleft">
+      <div class="stat-line"><span class="label">SCORE</span> <span id="score">0</span></div>
+      <div class="stat-line"><span class="label">WAVE</span> <span id="wave">1</span></div>
+      <div class="stat-line small"><span class="label">ENEMIES</span> <span id="enemies-left">0</span></div>
+    </div>
+
+    <!-- Top right: live accuracy stats -->
+    <div id="topright">
+      <div class="stat-line small"><span class="label">ACC</span> <span id="accuracy">100%</span></div>
+      <div class="stat-line small"><span class="label">HS%</span> <span id="hs-pct">0%</span></div>
+      <div class="stat-line small"><span class="label">KILLS</span> <span id="kills">0</span></div>
+      <div class="stat-line small"><span class="label">STREAK</span> <span id="streak">0</span></div>
+    </div>
+
+    <!-- Kill feed -->
+    <div id="killfeed"></div>
+
+    <!-- Damage indicator overlay -->
+    <div id="damage-vignette"></div>
+
+    <!-- Bottom left: health & armor -->
+    <div id="bottomleft">
+      <div class="hp-row">
+        <svg class="hp-icon" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.2C.3 8.7 1.7 5 5.2 5c2 0 3.2 1.2 3.8 2.2C9.6 6.2 10.8 5 12.8 5 16.3 5 17.7 8.7 16 11.8 13.5 16.1 12 21 12 21z"/></svg>
+        <span id="health">100</span>
+      </div>
+      <div class="armor-row">
+        <svg class="armor-icon" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 8.7-8 11-4.6-2.3-8-6-8-11V5l8-3z"/></svg>
+        <span id="armor">100</span>
+      </div>
+    </div>
+
+    <!-- Bottom right: ammo & weapon -->
+    <div id="bottomright">
+      <div id="weapon-name">AK-47</div>
+      <div class="ammo-row">
+        <span id="ammo-mag">30</span><span class="ammo-sep">/</span><span id="ammo-reserve">90</span>
+      </div>
+      <div id="reload-hint" class="hidden">RELOADING…</div>
+    </div>
+
+    <!-- Weapon selector strip -->
+    <div id="weapon-strip"></div>
+  </div>
+
+  <!-- ===================== MAIN MENU ===================== -->
+  <div id="menu" class="overlay">
+    <div class="menu-inner">
+      <h1 class="logo">DUST<span>STRIKE</span></h1>
+      <p class="tagline">Desert Aim Trainer · Waves &amp; Bosses</p>
+
+      <div class="menu-panel">
+        <div class="menu-col">
+          <h3>Difficulty</h3>
+          <div class="seg" id="difficulty-seg">
+            <button data-diff="easy">Casual</button>
+            <button data-diff="normal" class="active">Normal</button>
+            <button data-diff="hard">Elite</button>
+          </div>
+          <h3>Mode</h3>
+          <div class="seg" id="mode-seg">
+            <button data-mode="waves" class="active">Wave Survival</button>
+            <button data-mode="endless">Endless Rush</button>
+          </div>
+        </div>
+        <div class="menu-col controls-col">
+          <h3>Controls</h3>
+          <ul class="controls-list">
+            <li><kbd>W A S D</kbd> Move</li>
+            <li><kbd>Mouse</kbd> Look</li>
+            <li><kbd>L-Click</kbd> Fire</li>
+            <li><kbd>R</kbd> Reload</li>
+            <li><kbd>1</kbd>–<kbd>5</kbd> / <kbd>Wheel</kbd> Switch weapon</li>
+            <li><kbd>Shift</kbd> Walk · <kbd>Ctrl</kbd> Crouch</li>
+            <li><kbd>Space</kbd> Jump · <kbd>Esc</kbd> Pause</li>
+          </ul>
+        </div>
+      </div>
+
+      <button id="play-btn" class="big-btn">CLICK TO PLAY</button>
+      <p class="hint">Click the button, then move your mouse to aim. Press <kbd>Esc</kbd> to release the cursor.</p>
+      <p id="best-score" class="best"></p>
+    </div>
+  </div>
+
+  <!-- ===================== PAUSE ===================== -->
+  <div id="pause" class="overlay hidden">
+    <div class="menu-inner">
+      <h2>PAUSED</h2>
+      <div class="pause-stats" id="pause-stats"></div>
+      <button id="resume-btn" class="big-btn">RESUME</button>
+      <button id="quit-btn" class="ghost-btn">QUIT TO MENU</button>
+    </div>
+  </div>
+
+  <!-- ===================== GAME OVER ===================== -->
+  <div id="gameover" class="overlay hidden">
+    <div class="menu-inner">
+      <h2 class="dead">YOU DIED</h2>
+      <div class="result-stats" id="result-stats"></div>
+      <button id="retry-btn" class="big-btn">PLAY AGAIN</button>
+      <button id="menu-btn" class="ghost-btn">MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- ===================== LOADING ===================== -->
+  <div id="loading" class="overlay">
+    <div class="menu-inner">
+      <div class="loader"></div>
+      <p>Deploying to Dust…</p>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
