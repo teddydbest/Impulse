@@ -189,6 +189,11 @@ class Game {
     document.addEventListener('contextmenu', (e) => e.preventDefault());
 
     document.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyM') {
+        const on = audio.toggleMusic();
+        if (this.running) this.hud.banner(on ? '♪ MUSIC ON' : '♪ MUSIC OFF', '', false, 1000);
+        return;
+      }
       if (!this.running) return;
       if (e.code === 'KeyR') this._reload();
       if (e.code.startsWith('Digit')) {
@@ -213,6 +218,9 @@ class Game {
     document.getElementById('pause').classList.add('hidden');
     this.hud.show();
     this._gameOver = false;
+
+    // The play-button click is a user gesture — safe to spin up audio + music.
+    audio.init(); audio.resume(); audio.startMusic();
 
     // reset state
     this.score = this.kills = this.streak = this.bestStreak = 0;

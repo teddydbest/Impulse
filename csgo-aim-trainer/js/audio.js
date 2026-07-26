@@ -1,5 +1,6 @@
 // audio.js — all sound is synthesized with the Web Audio API (no audio files).
 // Gunshots, reloads, hitmarkers, footsteps, deaths, boss roars and ambience.
+import { MusicEngine } from './music.js';
 
 export class AudioEngine {
   constructor() {
@@ -26,10 +27,16 @@ export class AudioEngine {
     comp.connect(this.ctx.destination);
     this.noiseBuf = this._makeNoise(1.0);
     this._startAmbience();
+    // ambient Arabic-flute soundtrack, routed through master so volume applies
+    this.music = new MusicEngine(this.ctx, this.master);
   }
 
   resume() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
   setVolume(v) { this.volume = v; if (this.master) this.master.gain.value = v; }
+
+  startMusic() { if (this.music && !this.music.playing) this.music.start(); }
+  stopMusic() { if (this.music) this.music.stop(); }
+  toggleMusic() { return this.music ? this.music.toggleMute() : false; }
 
   _makeNoise(seconds) {
     const len = Math.floor(this.ctx.sampleRate * seconds);

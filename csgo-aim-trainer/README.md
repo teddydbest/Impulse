@@ -47,6 +47,7 @@ the cursor / pause.
 | `Shift` | Walk (accurate) |
 | `Ctrl` / `C` | Crouch |
 | `Space` | Jump |
+| `M` | Toggle background music |
 | `Esc` | Pause / release mouse |
 
 ## 🔫 Weapons
@@ -83,6 +84,14 @@ Live HUD tracks **accuracy**, **headshot %**, **kills**, and **kill streak**,
 with a full end-of-run summary and a persisted **best score** per mode
 (stored in `localStorage`).
 
+## 🎵 Soundtrack
+
+A generative **ambient Arabic-flute (ney)** soundtrack plays in the background —
+also fully synthesized, no audio files. A slow, rubato melody wanders through
+the **Hijaz maqam** (the Middle-Eastern scale with the signature augmented-2nd)
+over a soft tonic/fifth drone, lush reverb, and a sparse deep frame-drum, so it
+never loops audibly. It sits under the SFX and can be toggled with **`M`**.
+
 ## 🗂️ Project structure
 
 ```
@@ -97,6 +106,7 @@ csgo-aim-trainer/
 │   ├── map.js          # Dust2-inspired arena, colliders, spawns
 │   ├── textures.js     # procedural canvas textures (sand, walls, crates, sky…)
 │   ├── audio.js        # Web Audio synthesized SFX + ambience
+│   ├── music.js        # generative ambient Arabic-flute (ney) soundtrack
 │   └── hud.js          # HUD/stat DOM helper
 └── vendor/             # three.js + PointerLockControls (local, no CDN)
 ```
