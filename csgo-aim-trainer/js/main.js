@@ -110,6 +110,18 @@ class Game {
     });
     this._scopeEl.append(cross, crossV);
     document.body.appendChild(this._scopeEl);
+
+    // Hint shown only when the mouse isn't captured (free-look fallback active).
+    this._lookHint = document.createElement('div');
+    this._lookHint.id = 'look-hint';
+    this._lookHint.textContent = '🖱 Move the mouse toward the screen edges to look · click to capture the mouse';
+    Object.assign(this._lookHint.style, {
+      position: 'fixed', bottom: '84px', left: '50%', transform: 'translateX(-50%)',
+      zIndex: '23', pointerEvents: 'none', display: 'none', font: '13px monospace',
+      color: '#e8d3a0', background: 'rgba(12,10,7,0.6)', padding: '5px 12px', borderRadius: '4px',
+      letterSpacing: '0.5px', textShadow: '0 1px 3px #000',
+    });
+    document.body.appendChild(this._lookHint);
   }
 
   _buildWorld() {
@@ -151,7 +163,7 @@ class Game {
     });
 
     document.getElementById('play-btn').addEventListener('click', () => this.start());
-    document.getElementById('resume-btn').addEventListener('click', () => this._requestLock());
+    document.getElementById('resume-btn').addEventListener('click', () => this._resume());
     document.getElementById('quit-btn').addEventListener('click', () => this.toMenu());
     document.getElementById('retry-btn').addEventListener('click', () => this.start());
     document.getElementById('menu-btn').addEventListener('click', () => this.toMenu());
@@ -177,8 +189,13 @@ class Game {
 
   _bindInput() {
     const dom = this.renderer.domElement;
+    // Track absolute cursor position for the free-look fallback (used when the
+    // Pointer Lock API is unavailable, e.g. inside a sandboxed iframe).
+    document.addEventListener('mousemove', (e) => { this._mouseClient = { x: e.clientX, y: e.clientY }; });
     document.addEventListener('mousedown', (e) => {
       if (!this.running || this.paused) return;
+      // A click is a user gesture — (re)try to capture the mouse for precise aim.
+      if (!this.player.isLocked) { try { this.player.controls.lock(); } catch (_) {} }
       if (e.button === 0) { this.firing = true; this._tryShoot(true); }
       if (e.button === 2) this._setAim(true);
     });
@@ -257,6 +274,14 @@ class Game {
       Accuracy: acc + '%', 'Best streak': this.bestStreak,
     });
     document.getElementById('pause').classList.remove('hidden');
+  }
+
+  _resume() {
+    // Unpause immediately (works with or without Pointer Lock), then try to
+    // re-capture the mouse for precise aim where the API is allowed.
+    this.paused = false;
+    document.getElementById('pause').classList.add('hidden');
+    this._requestLock();
   }
 
   toMenu() {
@@ -369,6 +394,27 @@ class Game {
     e.y += (Math.random() - 0.5) * def.recoil * 0.6 * scale;
     this.camera.quaternion.setFromEuler(e);
     this._recoilAccum = (this._recoilAccum || 0) + kick;
+  }
+
+  // Free-look fallback: when the pointer isn't locked, steer the view by moving
+  // the cursor toward the screen edges (center is a dead zone). Keeps the game
+  // playable in environments that block the Pointer Lock API.
+  _freeLook(dt) {
+    if (!this.running || this.paused || this.player.isLocked || !this._mouseClient) return;
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    let dx = (this._mouseClient.x - cx) / cx;
+    let dy = (this._mouseClient.y - cy) / cy;
+    const dead = 0.07;
+    const mag = Math.hypot(dx, dy);
+    if (mag < dead) return;
+    // ease past the dead zone so small movements are gentle
+    const turn = 2.6; // rad/s near the edges
+    this.camera.updateMatrixWorld();
+    const e = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
+    e.y -= dx * turn * dt;
+    e.x -= dy * turn * dt;
+    e.x = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, e.x));
+    this.camera.quaternion.setFromEuler(e);
   }
 
   _recoverRecoil(dt) {
@@ -560,6 +606,7 @@ class Game {
 
     if (this.running && !this.paused) {
       this.player.update(dt);
+      this._freeLook(dt);
       const now = performance.now();
 
       // continuous fire for autos
@@ -591,7 +638,9 @@ class Game {
       this.hud.setSpread(this.weapons.currentSpread(this.player.moveState()));
       this.hud.setHealth(this.player.hp, this.player.armor);
       this._updateStatsHud();
+      this._lookHint.style.display = this.player.isLocked ? 'none' : 'block';
     } else {
+      if (this._lookHint) this._lookHint.style.display = 'none';
       // still animate tracers/impacts fade when paused? keep frozen.
     }
 
