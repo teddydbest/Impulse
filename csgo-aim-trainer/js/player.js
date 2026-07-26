@@ -61,6 +61,7 @@ export class Player {
 
   takeDamage(amount) {
     if (this.hp <= 0) return;
+    if (this.godMode) return false; // cheat
     // armor absorbs half, degrades
     if (this.armor > 0) {
       const absorbed = Math.min(this.armor, amount * 0.5);
@@ -79,7 +80,8 @@ export class Player {
 
   update(dt) {
     const obj = this.controls.getObject();
-    const speed = this.crouching ? 3.2 : (this.keys['ShiftLeft'] ? 3.0 : 6.4);
+    const speedMult = this.superSpeed ? 2.1 : 1;
+    const speed = (this.crouching ? 3.2 : (this.keys['ShiftLeft'] ? 3.0 : 6.4)) * speedMult;
 
     // desired movement dir in local space
     let fwd = (this.keys['KeyW'] ? 1 : 0) - (this.keys['KeyS'] ? 1 : 0);
@@ -102,7 +104,7 @@ export class Player {
 
     // jump + gravity
     if (this.keys['Space'] && this.onGround) {
-      this.velocity.y = 7.2;
+      this.velocity.y = this.superJump ? 13.5 : 7.2;
       this.onGround = false;
     }
     this.velocity.y -= 22 * dt;

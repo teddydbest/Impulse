@@ -7,6 +7,8 @@ import { WeaponManager, LOADOUT, WEAPON_DEFS } from './weapons.js';
 import { WaveDirector } from './enemies.js';
 import { HUD } from './hud.js';
 import { audio } from './audio.js';
+import { cheats, settings, CHEAT_CONTROLS, loadCheatState, saveCheatState, anyCheatOn } from './cheats.js';
+import { MUSIC_PRESETS, MUSIC_VARIATIONS } from './music.js';
 
 class Game {
   constructor() {
@@ -32,12 +34,16 @@ class Game {
     this.tracers = [];
     this.impacts = [];
 
+    loadCheatState();
+
     this._setupRenderer();
     this._setupScene();
     this._setupHelpers();
     this._buildWorld();
+    this._buildSettingsUI();
     this._bindUI();
     this._bindInput();
+    this._applyCheats();
 
     window.addEventListener('resize', () => this._onResize());
 
@@ -122,6 +128,24 @@ class Game {
       letterSpacing: '0.5px', textShadow: '0 1px 3px #000',
     });
     document.body.appendChild(this._lookHint);
+
+    // ESP / radar overlay canvas (drawn on top of the 3D view when cheats on)
+    this._esp = document.createElement('canvas');
+    this._esp.id = 'esp-canvas';
+    Object.assign(this._esp.style, { position: 'fixed', inset: '0', zIndex: '21', pointerEvents: 'none' });
+    document.body.appendChild(this._esp);
+    this._espCtx = this._esp.getContext('2d');
+    this._esp.width = window.innerWidth; this._esp.height = window.innerHeight;
+
+    // Active-cheats readout
+    this._cheatHud = document.createElement('div');
+    this._cheatHud.id = 'cheat-hud';
+    Object.assign(this._cheatHud.style, {
+      position: 'fixed', top: '120px', left: '22px', zIndex: '24', pointerEvents: 'none',
+      font: '12px monospace', color: '#ff4d4d', textShadow: '0 1px 3px #000', lineHeight: '1.5',
+      letterSpacing: '0.5px',
+    });
+    document.body.appendChild(this._cheatHud);
   }
 
   _buildWorld() {
@@ -167,7 +191,11 @@ class Game {
     document.getElementById('quit-btn').addEventListener('click', () => this.toMenu());
     document.getElementById('retry-btn').addEventListener('click', () => this.start());
     document.getElementById('menu-btn').addEventListener('click', () => this.toMenu());
+    document.getElementById('ig-resume').addEventListener('click', () => this._closeIngamePanel());
+    document.getElementById('ig-quit').addEventListener('click', () => this.toMenu());
 
+    this._wireTabs('menu-tabs');
+    this._wireTabs('ig-tabs');
     this._showBest();
 
     // pointer lock transitions -> pause/resume
@@ -176,7 +204,8 @@ class Game {
       if (this.running) { this.paused = false; document.getElementById('pause').classList.add('hidden'); }
     });
     this.player.controls.addEventListener('unlock', () => {
-      if (this.running && !this._gameOver) this._pause();
+      // don't pop the pause overlay when we intentionally opened the cheats panel
+      if (this.running && !this._gameOver && !this._panelOpen) this._pause();
     });
   }
 
@@ -187,11 +216,164 @@ class Game {
     el.innerHTML = best ? `BEST (${this.mode}): <b>${best}</b>` : '';
   }
 
+  // ---------------- settings / cheats / sound UI ----------------
+  _buildSettingsUI() {
+    this._uiSyncers = [];
+    this._buildCheatPanel(document.getElementById('cheats-menu'));
+    this._buildCheatPanel(document.getElementById('cheats-ingame'));
+    this._buildSoundPanel(document.getElementById('sound-menu'));
+    this._buildSoundPanel(document.getElementById('sound-ingame'));
+    this._buildSensRow(document.getElementById('sens-menu'));
+    this._syncUI();
+  }
+
+  _syncUI() { for (const fn of this._uiSyncers) fn(); }
+
+  _buildCheatPanel(container) {
+    container.innerHTML = '';
+    for (const c of CHEAT_CONTROLS) {
+      const row = document.createElement('div');
+      row.className = 'cheat-row' + (c.sub ? ' sub' : '');
+      const lbl = document.createElement('div'); lbl.className = 'lbl';
+      const name = document.createElement('span');
+      name.innerHTML = c.label + (c.hotkey ? ` <span class="hk">${c.hotkey.replace('Key', '')}</span>` : '');
+      lbl.appendChild(name);
+      if (c.desc) { const d = document.createElement('span'); d.className = 'desc'; d.textContent = c.desc; lbl.appendChild(d); }
+      row.appendChild(lbl);
+
+      if (c.type === 'toggle') {
+        const sw = document.createElement('label'); sw.className = 'switch';
+        const input = document.createElement('input'); input.type = 'checkbox'; input.checked = cheats[c.k];
+        const track = document.createElement('span'); track.className = 'track';
+        const knob = document.createElement('span'); knob.className = 'knob';
+        sw.append(input, track, knob);
+        input.addEventListener('change', () => { cheats[c.k] = input.checked; this._applyCheats(); this._syncUI(); });
+        row.appendChild(sw);
+        this._uiSyncers.push(() => { input.checked = cheats[c.k]; });
+      } else if (c.type === 'range') {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;align-items:center;gap:8px';
+        const input = document.createElement('input');
+        input.type = 'range'; input.min = c.min; input.max = c.max; input.step = c.step; input.value = cheats[c.k];
+        input.style.width = '104px';
+        const val = document.createElement('span');
+        val.style.cssText = 'font-size:12px;color:#fff;width:38px;text-align:right;font-variant-numeric:tabular-nums';
+        const fmt = () => c.k === 'aimbotSmooth' ? Math.round(cheats[c.k] * 100) + '%' : cheats[c.k] + (c.unit || '');
+        val.textContent = fmt();
+        input.addEventListener('input', () => { cheats[c.k] = parseFloat(input.value); val.textContent = fmt(); saveCheatState(); });
+        wrap.append(input, val); row.appendChild(wrap);
+        this._uiSyncers.push(() => { input.value = cheats[c.k]; val.textContent = fmt(); });
+      }
+      container.appendChild(row);
+    }
+  }
+
+  _slider(container, label, min, max, step, get, set, fmt) {
+    const row = document.createElement('div'); row.className = 'snd-row';
+    const cap = document.createElement('div'); cap.className = 'cap';
+    const n = document.createElement('span'); n.textContent = label;
+    const v = document.createElement('span'); v.className = 'val';
+    cap.append(n, v);
+    const input = document.createElement('input');
+    input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = get();
+    const upd = () => { v.textContent = fmt(get()); };
+    upd();
+    input.addEventListener('input', () => { set(parseFloat(input.value)); upd(); saveCheatState(); });
+    row.append(cap, input); container.appendChild(row);
+    this._uiSyncers.push(() => { input.value = get(); upd(); });
+  }
+
+  _chips(container, items, getIndex, onPick) {
+    const row = document.createElement('div'); row.className = 'chip-row';
+    const btns = items.map((label, i) => {
+      const b = document.createElement('button'); b.className = 'chip'; b.textContent = label;
+      b.addEventListener('click', () => { onPick(i); this._syncUI(); });
+      row.appendChild(b); return b;
+    });
+    container.appendChild(row);
+    this._uiSyncers.push(() => btns.forEach((b, i) => b.classList.toggle('active', i === getIndex())));
+  }
+
+  _buildSensRow(container) {
+    container.innerHTML = '';
+    this._slider(container, 'Sensitivity', 0.2, 3, 0.05,
+      () => settings.sensitivity,
+      (v) => { settings.sensitivity = v; this.player.controls.pointerSpeed = v; },
+      (v) => v.toFixed(2) + '×');
+  }
+
+  _buildSoundPanel(container) {
+    container.innerHTML = '';
+    const h1 = document.createElement('h3'); h1.textContent = 'Soundtrack'; container.appendChild(h1);
+    this._chips(container, MUSIC_PRESETS.map(p => p.name), () => settings.soundtrack,
+      (i) => { settings.soundtrack = i; audio.setMusicTrack(i); saveCheatState(); });
+    const h2 = document.createElement('h3'); h2.textContent = 'Variation'; container.appendChild(h2);
+    this._chips(container, MUSIC_VARIATIONS.map(v => v.name), () => settings.variation,
+      (i) => { settings.variation = i; audio.setMusicVariation(i); saveCheatState(); });
+    const h3 = document.createElement('h3'); h3.textContent = 'Levels'; container.appendChild(h3);
+    this._slider(container, 'Music volume', 0, 1, 0.02,
+      () => settings.musicVolume, (v) => { settings.musicVolume = v; audio.setMusicVolume(v); }, (v) => Math.round(v * 100) + '%');
+    this._slider(container, 'SFX volume', 0, 1, 0.02,
+      () => settings.sfxVolume, (v) => { settings.sfxVolume = v; audio.setVolume(v); }, (v) => Math.round(v * 100) + '%');
+    this._slider(container, 'Mouse sensitivity', 0.2, 3, 0.05,
+      () => settings.sensitivity, (v) => { settings.sensitivity = v; this.player.controls.pointerSpeed = v; }, (v) => v.toFixed(2) + '×');
+  }
+
+  _wireTabs(barId) {
+    const bar = document.getElementById(barId);
+    const overlay = bar.closest('.overlay');
+    bar.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        overlay.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('hidden', p.dataset.pane !== btn.dataset.tab));
+      });
+    });
+  }
+
+  _applyAudioSettings() {
+    audio.setMusicVolume(settings.musicVolume);
+    audio.setVolume(settings.sfxVolume);
+    audio.setMusicTrack(settings.soundtrack);
+    audio.setMusicVariation(settings.variation);
+  }
+
+  _openIngamePanel() {
+    if (!this.running || this._gameOver) return;
+    this._panelOpen = true;
+    this.paused = true;
+    this.firing = false;
+    this._setAim(false);
+    if (this.player.isLocked) this.player.controls.unlock();
+    document.getElementById('pause').classList.add('hidden');
+    document.getElementById('ingame-panel').classList.remove('hidden');
+    this._syncUI();
+  }
+  _closeIngamePanel() {
+    this._panelOpen = false;
+    document.getElementById('ingame-panel').classList.add('hidden');
+    this.paused = false;
+    this._requestLock();
+  }
+
   _bindInput() {
     const dom = this.renderer.domElement;
-    // Track absolute cursor position for the free-look fallback (used when the
-    // Pointer Lock API is unavailable, e.g. inside a sandboxed iframe).
-    document.addEventListener('mousemove', (e) => { this._mouseClient = { x: e.clientX, y: e.clientY }; });
+    // Look control. When the pointer is locked, PointerLockControls consumes
+    // movement. When it ISN'T (e.g. a sandboxed iframe blocks Pointer Lock),
+    // we apply the raw relative mouse delta directly — so the view tracks your
+    // actual hand movement 1:1 instead of drifting. Trackpad-friendly.
+    document.addEventListener('mousemove', (e) => {
+      this._mouseClient = { x: e.clientX, y: e.clientY };
+      if (!this.running || this.paused || this.player.isLocked) return;
+      const mx = e.movementX || 0, my = e.movementY || 0;
+      if (mx === 0 && my === 0) return;
+      const s = 0.0022 * settings.sensitivity;
+      const eu = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
+      eu.y -= mx * s;
+      eu.x -= my * s;
+      eu.x = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, eu.x));
+      this.camera.quaternion.setFromEuler(eu);
+    });
     document.addEventListener('mousedown', (e) => {
       if (!this.running || this.paused) return;
       // A click is a user gesture — (re)try to capture the mouse for precise aim.
@@ -210,6 +392,19 @@ class Game {
         const on = audio.toggleMusic();
         if (this.running) this.hud.banner(on ? '♪ MUSIC ON' : '♪ MUSIC OFF', '', false, 1000);
         return;
+      }
+      if (e.code === 'Backslash') {
+        if (this.running) { this._panelOpen ? this._closeIngamePanel() : this._openIngamePanel(); }
+        return;
+      }
+      // cheat quick-toggle hotkeys (work anytime)
+      for (const c of CHEAT_CONTROLS) {
+        if (c.hotkey && c.hotkey === e.code) {
+          cheats[c.k] = !cheats[c.k];
+          this._applyCheats(); this._syncUI();
+          if (this.running) this.hud.banner((cheats[c.k] ? '✓ ' : '✕ ') + c.label.toUpperCase(), '', false, 900);
+          return;
+        }
       }
       if (!this.running) return;
       if (e.code === 'KeyR') this._reload();
@@ -238,6 +433,7 @@ class Game {
 
     // The play-button click is a user gesture — safe to spin up audio + music.
     audio.init(); audio.resume(); audio.startMusic();
+    this._applyAudioSettings();
 
     // reset state
     this.score = this.kills = this.streak = this.bestStreak = 0;
@@ -255,6 +451,9 @@ class Game {
 
     this.running = true;
     this.paused = false;
+    this._panelOpen = false;
+    this.player.controls.pointerSpeed = settings.sensitivity;
+    this._applyCheats();
     this._requestLock();
     // kick off first wave shortly after lock
     this.director.state = 'intermission';
@@ -288,11 +487,14 @@ class Game {
     this.running = false;
     this.paused = false;
     this._gameOver = false;
+    this._panelOpen = false;
     this.director.reset();
     this.hud.hide();
     document.getElementById('pause').classList.add('hidden');
+    document.getElementById('ingame-panel').classList.add('hidden');
     document.getElementById('gameover').classList.add('hidden');
     document.getElementById('menu').classList.remove('hidden');
+    if (this._espCtx) this._espCtx.clearRect(0, 0, this._esp.width, this._esp.height);
     this._showBest();
   }
 
@@ -352,7 +554,8 @@ class Game {
     this.aiming = on;
     const scoped = this.weapons.def?.scoped;
     this._targetFov = on ? (scoped ? 22 : 55) : this.baseFov;
-    this.player.controls.pointerSpeed = on ? (scoped ? 0.35 : 0.7) : 1.0;
+    // pointer-lock look speed = user sensitivity, tightened while aiming
+    this.player.controls.pointerSpeed = settings.sensitivity * (on ? (scoped ? 0.35 : 0.7) : 1.0);
     this._scopeEl.style.display = (on && scoped) ? 'block' : 'none';
     // hide viewmodel when fully scoped for clarity
     if (this.weapons.models[this.weapons.current]) {
@@ -379,8 +582,8 @@ class Game {
     // Bullet travels along the current aim first (a well-placed first shot lands),
     // then the view kicks — matching the CS feel and keeping tap-aim honest.
     this._doRaycastShot(def);
-    this._applyRecoil(def);
-    if (this.weapons.ammo.mag === 0) this.weapons.startReload();
+    if (!cheats.noRecoil) this._applyRecoil(def);
+    if (this.weapons.ammo.mag === 0 && !cheats.infiniteAmmo) this.weapons.startReload();
   }
 
   _applyRecoil(def) {
@@ -396,27 +599,6 @@ class Game {
     this._recoilAccum = (this._recoilAccum || 0) + kick;
   }
 
-  // Free-look fallback: when the pointer isn't locked, steer the view by moving
-  // the cursor toward the screen edges (center is a dead zone). Keeps the game
-  // playable in environments that block the Pointer Lock API.
-  _freeLook(dt) {
-    if (!this.running || this.paused || this.player.isLocked || !this._mouseClient) return;
-    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-    let dx = (this._mouseClient.x - cx) / cx;
-    let dy = (this._mouseClient.y - cy) / cy;
-    const dead = 0.07;
-    const mag = Math.hypot(dx, dy);
-    if (mag < dead) return;
-    // ease past the dead zone so small movements are gentle
-    const turn = 2.6; // rad/s near the edges
-    this.camera.updateMatrixWorld();
-    const e = new THREE.Euler().setFromQuaternion(this.camera.quaternion, 'YXZ');
-    e.y -= dx * turn * dt;
-    e.x -= dy * turn * dt;
-    e.x = Math.max(-Math.PI / 2 + 0.02, Math.min(Math.PI / 2 - 0.02, e.x));
-    this.camera.quaternion.setFromEuler(e);
-  }
-
   _recoverRecoil(dt) {
     if (!this._recoilAccum || this._recoilAccum <= 0) return;
     const rate = (this.weapons.def.recoilRecover || 0.1) * 6;
@@ -427,13 +609,169 @@ class Game {
     this._recoilAccum -= dec;
   }
 
+  // ==================== CHEATS ====================
+  // Sync cheat state into subsystems + refresh the on-screen readout.
+  _applyCheats() {
+    this.weapons.fireRateMult = cheats.rapidFire ? 3.2 : 1;
+    this.weapons.infiniteAmmo = cheats.infiniteAmmo;
+    this.player.godMode = cheats.godMode;
+    this.player.superSpeed = cheats.superSpeed;
+    this.player.superJump = cheats.superJump;
+    if (cheats.infiniteAmmo) { const a = this.weapons.ammo; if (a) { a.mag = this.weapons.def.mag; this._refreshAmmo(); } }
+    this._applyChams(cheats.wallhack);
+    // readout
+    const active = CHEAT_CONTROLS.filter(c => c.type === 'toggle' && cheats[c.k]).map(c => c.label.toUpperCase());
+    this._cheatHud.innerHTML = active.length ? '⚠ CHEATS<br>' + active.join('<br>') : '';
+    if (!cheats.wallhack && !cheats.radar && this._espCtx) this._espCtx.clearRect(0, 0, this._esp.width, this._esp.height);
+    saveCheatState();
+  }
+
+  _applyChams(on) {
+    for (const e of this.director.enemies) this._champEnemy(e, on);
+    this._chamsOn = on;
+  }
+  _champEnemy(e, on) {
+    for (const m of e.hitMeshes) {
+      const col = e.def && e.def.camo === 'ct' ? 0x1a5a8a : 0x8a1a1a;
+      m.material.depthTest = !on;
+      m.material.depthWrite = !on;
+      m.material.emissive && m.material.emissive.setHex(on ? col : 0x000000);
+      m.renderOrder = on ? 997 : 0;
+    }
+    e._chammed = on;
+  }
+
+  // Pick the enemy closest to the crosshair within the aimbot FOV cone.
+  _bestAimTarget(fovDeg) {
+    const fwd = new THREE.Vector3(); this.camera.getWorldDirection(fwd);
+    const cos = Math.cos(fovDeg * Math.PI / 180);
+    let best = null, bestDot = cos;
+    const tmp = new THREE.Vector3();
+    for (const e of this.director.enemies) {
+      if (e.dead) continue;
+      (cheats.aimbotHead ? e.head : e.torso).getWorldPosition(tmp);
+      const to = tmp.sub(this.camera.position).normalize();
+      const dot = to.dot(fwd);          // 1 = dead-centre on the crosshair
+      if (dot > bestDot) { bestDot = dot; best = e; }
+    }
+    return best;
+  }
+
+  _aimbot(dt) {
+    if (!cheats.aimbot) return;
+    const target = this._bestAimTarget(cheats.aimbotFov);
+    if (!target) return;
+    const aim = new THREE.Vector3();
+    (cheats.aimbotHead ? target.head : target.torso).getWorldPosition(aim);
+    const dir = aim.sub(this.camera.position).normalize();
+    // desired orientation whose forward (-Z) points along dir
+    const m = new THREE.Matrix4().lookAt(new THREE.Vector3(0, 0, 0), dir, new THREE.Vector3(0, 1, 0));
+    const targetQ = new THREE.Quaternion().setFromRotationMatrix(m);
+    const s = Math.min(1, cheats.aimbotSmooth * dt * 22);
+    this.camera.quaternion.slerp(targetQ, s);
+    this._recoilAccum = 0; // keep it glued
+  }
+
+  _crosshairOnEnemy() {
+    const origin = this.camera.position.clone();
+    const dir = new THREE.Vector3(); this.camera.getWorldDirection(dir);
+    this.raycaster.set(origin, dir); this.raycaster.far = 400;
+    const em = [];
+    for (const e of this.director.enemies) if (!e.dead) em.push(...e.hitMeshes);
+    const eh = this.raycaster.intersectObjects(em, false);
+    if (!eh.length) return false;
+    const wh = this.raycaster.intersectObjects(this.map.solids, false);
+    return !(wh.length && wh[0].distance < eh[0].distance);
+  }
+
+  _triggerbot() {
+    if (!cheats.triggerbot) return;
+    if (this._crosshairOnEnemy()) this._tryShoot(true);
+  }
+
+  // ESP boxes + snaplines + optional radar, drawn on the overlay canvas.
+  _drawESP() {
+    const ctx = this._espCtx; if (!ctx) return;
+    const W = this._esp.width, H = this._esp.height;
+    ctx.clearRect(0, 0, W, H);
+    if (!this.running || this.paused) return;
+
+    if (cheats.wallhack) {
+      const head = new THREE.Vector3(), feet = new THREE.Vector3();
+      for (const e of this.director.enemies) {
+        if (e.dead) continue;
+        e.group.getWorldPosition(feet);
+        head.copy(feet); head.y += (e.isBoss ? 4.6 : 2.0);
+        const pf = feet.clone().project(this.camera);
+        const ph = head.clone().project(this.camera);
+        if (pf.z > 1 || ph.z > 1) continue; // behind camera
+        const sxF = (pf.x * 0.5 + 0.5) * W, syF = (-pf.y * 0.5 + 0.5) * H;
+        const sxH = (ph.x * 0.5 + 0.5) * W, syH = (-ph.y * 0.5 + 0.5) * H;
+        const h = Math.max(10, syF - syH);
+        const w = h * 0.45;
+        const x = (sxF + sxH) / 2 - w / 2, y = syH;
+        const col = e.def && e.def.camo === 'ct' ? '#33aaff' : '#ff4d4d';
+        ctx.lineWidth = e.isBoss ? 2.5 : 1.5;
+        ctx.strokeStyle = col;
+        ctx.strokeRect(x, y, w, h);
+        // health bar (left side)
+        const hpFrac = Math.max(0, e.hp / e.maxHp);
+        ctx.fillStyle = '#000'; ctx.fillRect(x - 5, y, 3, h);
+        ctx.fillStyle = hpFrac > 0.5 ? '#5fdd5f' : hpFrac > 0.25 ? '#e8c33d' : '#e2453c';
+        ctx.fillRect(x - 5, y + h * (1 - hpFrac), 3, h * hpFrac);
+        // snapline from bottom-center
+        ctx.strokeStyle = col; ctx.globalAlpha = 0.5; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(W / 2, H); ctx.lineTo((sxF + sxH) / 2, syF); ctx.stroke();
+        ctx.globalAlpha = 1;
+        // label
+        const dist = this.camera.position.distanceTo(feet) | 0;
+        ctx.font = '11px monospace'; ctx.fillStyle = col; ctx.textAlign = 'center';
+        const name = e.isBoss ? (e.def.name || 'BOSS') : (e.type || 'BOT').toUpperCase();
+        ctx.fillText(`${name} ${dist}m`, (sxF + sxH) / 2, syH - 4);
+      }
+    }
+
+    if (cheats.radar) this._drawRadar(ctx, W, H);
+  }
+
+  _drawRadar(ctx, W, H) {
+    const R = 90, cx = W - R - 24, cy = R + 24, range = 70;
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = 'rgba(10,14,10,0.7)';
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#2f5f2f'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+    // player heading
+    const fwd = new THREE.Vector3(); this.camera.getWorldDirection(fwd);
+    const yaw = Math.atan2(fwd.x, fwd.z);
+    ctx.fillStyle = '#7fe07f';
+    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 7); ctx.fill();
+    const pp = this.player.position;
+    for (const e of this.director.enemies) {
+      if (e.dead) continue;
+      const dx = e.position.x - pp.x, dz = e.position.z - pp.z;
+      // rotate into view space so "up" is where you look
+      const rx = dx * Math.cos(-yaw) - dz * Math.sin(-yaw);
+      const rz = dx * Math.sin(-yaw) + dz * Math.cos(-yaw);
+      let px = cx + (rx / range) * R;
+      let py = cy - (rz / range) * R;  // forward = up
+      const d = Math.hypot(px - cx, py - cy);
+      if (d > R) { px = cx + (px - cx) / d * R; py = cy + (py - cy) / d * R; }
+      ctx.fillStyle = e.isBoss ? '#ffaa00' : (e.def && e.def.camo === 'ct' ? '#33aaff' : '#ff4d4d');
+      ctx.beginPath(); ctx.arc(px, py, e.isBoss ? 4 : 2.5, 0, 7); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   _doRaycastShot(def) {
     const origin = this.camera.position.clone();
     const dir = new THREE.Vector3();
     this.camera.getWorldDirection(dir);
 
-    // apply spread
-    const spread = this.aiming ? this.weapons.currentSpread(this.player.moveState()) * 0.35
+    // apply spread (cheat: no spread = perfect laser accuracy)
+    const spread = cheats.noSpread ? 0
+                 : this.aiming ? this.weapons.currentSpread(this.player.moveState()) * 0.35
                                : this.weapons.currentSpread(this.player.moveState());
     if (spread > 0) {
       const side = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
@@ -465,7 +803,7 @@ class Game {
       const enemy = ud.enemy;
       const head = ud.part === 'head';
       const mult = head ? def.headshotMult : (ud.mult || 1);
-      const dmg = def.damage * mult;
+      const dmg = cheats.oneHitKill ? enemy.maxHp * 10 : def.damage * mult;
       const result = enemy.takeDamage(dmg, head);
       struckEnemy = true;
       this.shotsHit++;
@@ -606,8 +944,12 @@ class Game {
 
     if (this.running && !this.paused) {
       this.player.update(dt);
-      this._freeLook(dt);
       const now = performance.now();
+
+      // cheats: aimbot steer + triggerbot + keep infinite mag topped
+      this._aimbot(dt);
+      this._triggerbot();
+      if (cheats.infiniteAmmo) { const a = this.weapons.ammo; if (a && a.mag < this.weapons.def.mag) { a.mag = this.weapons.def.mag; this._refreshAmmo(); } }
 
       // continuous fire for autos
       if (this.firing && this.weapons.def.auto) this._tryShoot(false);
@@ -619,6 +961,7 @@ class Game {
       this.director.update(dt, this.player.position);
       for (const e of this.director.enemies) {
         if (e.dead) continue;
+        if (cheats.wallhack && !e._chammed) this._champEnemy(e, true);
         const los = e.melee ? true : this._enemyLOS(e);
         e.update(dt, this.player.position, this.map, (en, dmg, melee) => this._onEnemyShoot(en, dmg, melee), los);
         e.faceBar(this.camera);
@@ -626,6 +969,7 @@ class Game {
       this.director.removeDead();
 
       this._updateTracers(dt);
+      this._drawESP();
 
       // fov smoothing (ADS)
       const tf = this._targetFov || this.baseFov;
@@ -641,7 +985,7 @@ class Game {
       this._lookHint.style.display = this.player.isLocked ? 'none' : 'block';
     } else {
       if (this._lookHint) this._lookHint.style.display = 'none';
-      // still animate tracers/impacts fade when paused? keep frozen.
+      if (this._espCtx) this._espCtx.clearRect(0, 0, this._esp.width, this._esp.height);
     }
 
     this.renderer.render(this.scene, this.camera);
@@ -658,6 +1002,7 @@ class Game {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    if (this._esp) { this._esp.width = window.innerWidth; this._esp.height = window.innerHeight; }
   }
 }
 

@@ -246,3 +246,86 @@ body.lowhp #game::after {
   box-shadow: inset 0 0 160px 40px rgba(226,69,60,0.35);
   animation: pulse 1.1s infinite;
 }
+
+/* ===================== Tabs, cheats & sound panels ===================== */
+.tabbar {
+  display: flex; gap: 6px; justify-content: center; margin-bottom: 18px;
+  border-bottom: 1px solid var(--panel-edge); padding-bottom: 0;
+}
+.tabbar button {
+  background: transparent; color: #b9a577; border: none;
+  border-bottom: 3px solid transparent; padding: 9px 20px; font-size: 14px;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  font-family: var(--hud-font); transition: color 0.12s, border-color 0.12s;
+}
+.tabbar button:hover { color: #fff; }
+.tabbar button.active { color: var(--t-orange); border-bottom-color: var(--t-orange); font-weight: 700; }
+
+.tabpane { animation: fadeUp 0.25s ease-out; }
+
+.panel-title { font-size: 34px; letter-spacing: 4px; margin-bottom: 16px; }
+
+/* Cheat grid */
+.cheat-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 22px;
+  background: var(--panel); border: 1px solid var(--panel-edge);
+  padding: 20px 24px; margin-bottom: 22px; border-radius: 6px;
+  text-align: left; max-height: 46vh; overflow-y: auto;
+}
+.cheat-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-family: var(--hud-font); font-size: 14px; color: #d8c9ab; min-height: 30px;
+}
+.cheat-row.sub { padding-left: 14px; opacity: 0.9; }
+.cheat-row .lbl { display: flex; flex-direction: column; }
+.cheat-row .lbl .desc { font-size: 11px; color: #8f8266; letter-spacing: 0; }
+.cheat-row .hk {
+  font-size: 10px; color: var(--sand-dark); border: 1px solid #4a3a1e;
+  border-radius: 3px; padding: 0 4px; margin-left: 6px;
+}
+
+/* Toggle switch */
+.switch { position: relative; width: 42px; height: 22px; flex: 0 0 auto; cursor: pointer; }
+.switch input { display: none; }
+.switch .track {
+  position: absolute; inset: 0; background: #2a2114; border: 1px solid #4a3a1e;
+  border-radius: 22px; transition: background 0.15s, border-color 0.15s;
+}
+.switch .knob {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  background: #b9a577; border-radius: 50%; transition: transform 0.15s, background 0.15s;
+}
+.switch input:checked + .track { background: rgba(226,69,60,0.35); border-color: var(--danger); }
+.switch input:checked + .track + .knob { transform: translateX(20px); background: #ff5a4d; }
+
+/* Sliders */
+.slider-mount, .snd-row { font-family: var(--hud-font); }
+.snd-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; text-align: left; }
+.snd-row .cap { display: flex; justify-content: space-between; font-size: 13px; color: var(--sand); letter-spacing: 1px; }
+.snd-row .cap .val { color: #fff; font-variant-numeric: tabular-nums; }
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 5px;
+  background: #2a2114; border: 1px solid #4a3a1e; border-radius: 4px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--t-orange); border: 2px solid #94590f; cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 15px; height: 15px; border-radius: 50%; background: var(--t-orange); border: 2px solid #94590f; cursor: pointer;
+}
+
+/* Sound panel */
+.sound-panel {
+  background: var(--panel); border: 1px solid var(--panel-edge);
+  padding: 20px 24px; margin-bottom: 22px; border-radius: 6px; text-align: left;
+}
+.sound-panel h3 { color: var(--sand); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 8px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.chip {
+  background: #221a10; color: #b9a577; border: 1px solid #4a3a1e; border-radius: 4px;
+  padding: 7px 12px; font-size: 12px; letter-spacing: 0.5px; cursor: pointer;
+  font-family: var(--hud-font); transition: all 0.12s;
+}
+.chip:hover { background: #2e2414; color: #fff; }
+.chip.active { background: var(--t-orange); color: #1a1206; border-color: var(--t-orange); font-weight: 700; }

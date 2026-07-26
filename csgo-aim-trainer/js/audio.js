@@ -37,6 +37,9 @@ export class AudioEngine {
   startMusic() { if (this.music && !this.music.playing) this.music.start(); }
   stopMusic() { if (this.music) this.music.stop(); }
   toggleMusic() { return this.music ? this.music.toggleMute() : false; }
+  setMusicVolume(v) { if (this.music) this.music.setLevel(v); }
+  setMusicTrack(i) { if (this.music) this.music.setPreset(i); }
+  setMusicVariation(v) { if (this.music) this.music.setVariation(v); }
 
   _makeNoise(seconds) {
     const len = Math.floor(this.ctx.sampleRate * seconds);

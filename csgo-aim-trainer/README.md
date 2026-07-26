@@ -48,7 +48,14 @@ the cursor / pause.
 | `Ctrl` / `C` | Crouch |
 | `Space` | Jump |
 | `M` | Toggle background music |
+| `\` | Open cheats & soundtrack panel (mid-game) |
+| `B` / `V` / `X` / `G` | Quick-toggle aimbot / wallhack / triggerbot / god mode |
 | `Esc` | Pause / release mouse |
+
+Mouse feel is fully adjustable — there's a **sensitivity** slider on the menu's
+Play tab and in the in-game panel. When the browser grants Pointer Lock you get
+native 1:1 aim; when it can't (e.g. a sandboxed iframe) the view still tracks
+your raw mouse movement 1:1 instead of drifting, so trackpads work fine.
 
 ## 🔫 Weapons
 
@@ -84,13 +91,33 @@ Live HUD tracks **accuracy**, **headshot %**, **kills**, and **kill streak**,
 with a full end-of-run summary and a persisted **best score** per mode
 (stored in `localStorage`).
 
-## 🎵 Soundtrack
+## 🎵 Soundtracks
 
-A generative **ambient Arabic-flute (ney)** soundtrack plays in the background —
-also fully synthesized, no audio files. A slow, rubato melody wanders through
-the **Hijaz maqam** (the Middle-Eastern scale with the signature augmented-2nd)
-over a soft tonic/fifth drone, lush reverb, and a sparse deep frame-drum, so it
-never loops audibly. It sits under the SFX and can be toggled with **`M`**.
+Six generative **ambient Middle-Eastern soundtracks**, all fully synthesized
+(no audio files), selectable from the **Soundtrack** tab (menu or in-game):
+
+| Track | Maqam | Voice |
+|-------|-------|-------|
+| Desert Ney | Hijaz | breathy ney flute |
+| Bazaar Oud | Nahawand | plucked oud |
+| Mirage Pads | Saba-ish | bowed strings pad |
+| Caravan | Hijaz (driving) | ney + darbuka |
+| Santur Nights | Nahawand | struck santur |
+| Rast Sunrise | Rast | oud |
+
+Each has four **variations** (Calm / Flowing / Driving / Ascend) that shift
+tempo, note density, register and percussion. A slow rubato melody wanders the
+chosen maqam over a tonic/fifth drone with lush reverb, so nothing loops
+audibly. Music/SFX volume sliders live in the same tab; **`M`** mutes music.
+
+## 🕹️ Cheats
+
+Being a solo aim-trainer sandbox, it ships the classic FPS cheat menu (menu tab
+or **`\`** in-game): **aimbot** (head/body, adjustable lock-on FOV + smoothing),
+**triggerbot**, **wallhack / ESP** (chams + boxes + snaplines), **radar**,
+**no recoil**, **no spread**, **infinite ammo**, **rapid fire**, **god mode**,
+**one-hit kill**, **super speed**, and **super jump**. Marquee cheats have
+quick-toggle hotkeys and an on-screen active-cheat readout.
 
 ## 🗂️ Project structure
 
@@ -106,7 +133,8 @@ csgo-aim-trainer/
 │   ├── map.js          # Dust2-inspired arena, colliders, spawns
 │   ├── textures.js     # procedural canvas textures (sand, walls, crates, sky…)
 │   ├── audio.js        # Web Audio synthesized SFX + ambience
-│   ├── music.js        # generative ambient Arabic-flute (ney) soundtrack
+│   ├── music.js        # generative multi-soundtrack music engine (ney/oud/…)
+│   ├── cheats.js       # cheat + settings state, persistence, control metadata
 │   └── hud.js          # HUD/stat DOM helper
 └── vendor/             # three.js + PointerLockControls (local, no CDN)
 ```

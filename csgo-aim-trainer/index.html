@@ -85,38 +85,69 @@
       <h1 class="logo">DUST<span>STRIKE</span></h1>
       <p class="tagline">Desert Aim Trainer · Waves &amp; Bosses</p>
 
-      <div class="menu-panel">
-        <div class="menu-col">
-          <h3>Difficulty</h3>
-          <div class="seg" id="difficulty-seg">
-            <button data-diff="easy">Casual</button>
-            <button data-diff="normal" class="active">Normal</button>
-            <button data-diff="hard">Elite</button>
+      <div class="tabbar" id="menu-tabs">
+        <button data-tab="play" class="active">Play</button>
+        <button data-tab="cheats">Cheats</button>
+        <button data-tab="sound">Soundtrack</button>
+      </div>
+
+      <div class="tabpane" data-pane="play">
+        <div class="menu-panel">
+          <div class="menu-col">
+            <h3>Difficulty</h3>
+            <div class="seg" id="difficulty-seg">
+              <button data-diff="easy">Casual</button>
+              <button data-diff="normal" class="active">Normal</button>
+              <button data-diff="hard">Elite</button>
+            </div>
+            <h3>Mode</h3>
+            <div class="seg" id="mode-seg">
+              <button data-mode="waves" class="active">Wave Survival</button>
+              <button data-mode="endless">Endless Rush</button>
+            </div>
+            <h3>Mouse sensitivity</h3>
+            <div id="sens-menu" class="slider-mount"></div>
           </div>
-          <h3>Mode</h3>
-          <div class="seg" id="mode-seg">
-            <button data-mode="waves" class="active">Wave Survival</button>
-            <button data-mode="endless">Endless Rush</button>
+          <div class="menu-col controls-col">
+            <h3>Controls</h3>
+            <ul class="controls-list">
+              <li><kbd>W A S D</kbd> Move</li>
+              <li><kbd>Mouse</kbd> Look · <kbd>L-Click</kbd> Fire · <kbd>R</kbd> Reload</li>
+              <li><kbd>1</kbd>–<kbd>5</kbd> / <kbd>Wheel</kbd> Switch weapon</li>
+              <li><kbd>Shift</kbd> Walk · <kbd>Ctrl</kbd> Crouch · <kbd>Space</kbd> Jump</li>
+              <li><kbd>Esc</kbd> Pause · <kbd>\\</kbd> Cheats &amp; Sound · <kbd>M</kbd> Music</li>
+              <li><kbd>B</kbd> Aimbot · <kbd>V</kbd> Wallhack · <kbd>X</kbd> Triggerbot · <kbd>G</kbd> God</li>
+            </ul>
           </div>
-        </div>
-        <div class="menu-col controls-col">
-          <h3>Controls</h3>
-          <ul class="controls-list">
-            <li><kbd>W A S D</kbd> Move</li>
-            <li><kbd>Mouse</kbd> Look</li>
-            <li><kbd>L-Click</kbd> Fire</li>
-            <li><kbd>R</kbd> Reload</li>
-            <li><kbd>1</kbd>–<kbd>5</kbd> / <kbd>Wheel</kbd> Switch weapon</li>
-            <li><kbd>Shift</kbd> Walk · <kbd>Ctrl</kbd> Crouch</li>
-            <li><kbd>Space</kbd> Jump · <kbd>Esc</kbd> Pause</li>
-            <li><kbd>M</kbd> Toggle music</li>
-          </ul>
         </div>
       </div>
 
+      <div class="tabpane hidden" data-pane="cheats">
+        <div class="cheat-grid" id="cheats-menu"></div>
+      </div>
+
+      <div class="tabpane hidden" data-pane="sound">
+        <div class="sound-panel" id="sound-menu"></div>
+      </div>
+
       <button id="play-btn" class="big-btn">CLICK TO PLAY</button>
-      <p class="hint">Click the button, then move your mouse to aim. Press <kbd>Esc</kbd> to release the cursor.</p>
+      <p class="hint">Click, then move your mouse to aim. <kbd>Esc</kbd> releases the cursor · <kbd>\\</kbd> opens cheats mid-game.</p>
       <p id="best-score" class="best"></p>
+    </div>
+  </div>
+
+  <!-- ===================== IN-GAME SETTINGS (cheats + sound) ===================== -->
+  <div id="ingame-panel" class="overlay hidden">
+    <div class="menu-inner">
+      <h2 class="panel-title">SETTINGS</h2>
+      <div class="tabbar" id="ig-tabs">
+        <button data-tab="cheats" class="active">Cheats</button>
+        <button data-tab="sound">Soundtrack</button>
+      </div>
+      <div class="tabpane" data-pane="cheats"><div class="cheat-grid" id="cheats-ingame"></div></div>
+      <div class="tabpane hidden" data-pane="sound"><div class="sound-panel" id="sound-ingame"></div></div>
+      <button id="ig-resume" class="big-btn">RESUME</button>
+      <button id="ig-quit" class="ghost-btn">QUIT TO MENU</button>
     </div>
   </div>
 

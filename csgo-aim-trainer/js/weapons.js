@@ -167,6 +167,8 @@ export class WeaponManager {
     this.kick = 0;           // viewmodel kick animation
     this.swayT = 0;
     this.onReloadDone = null;
+    this.fireRateMult = 1;   // cheat: rapid fire
+    this.infiniteAmmo = false; // cheat
 
     for (const id of LOADOUT) {
       const model = BUILDERS[id]();
@@ -210,7 +212,7 @@ export class WeaponManager {
   canFire(now) {
     if (this.reloading) return false;
     const def = this.def;
-    const interval = 60000 / def.rpm;
+    const interval = 60000 / (def.rpm * this.fireRateMult);
     if (now - this.lastShot < interval) return false;
     if (this.ammo.mag <= 0) return false;
     return true;
@@ -225,7 +227,7 @@ export class WeaponManager {
     }
     if (!this.canFire(now)) return { fired: false };
     this.lastShot = now;
-    this.ammo.mag--;
+    if (!this.infiniteAmmo) this.ammo.mag--;
     const def = this.def;
     this.audio.shoot(def.sound);
     // recoil + viewmodel kick
