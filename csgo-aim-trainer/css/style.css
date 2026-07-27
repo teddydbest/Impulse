@@ -329,3 +329,7 @@ input[type=range]::-moz-range-thumb {
 }
 .chip:hover { background: #2e2414; color: #fff; }
 .chip.active { background: var(--t-orange); color: #1a1206; border-color: var(--t-orange); font-weight: 700; }
+
+/* Hide the OS cursor while actively playing (covers the no-Pointer-Lock case). */
+body.playing { cursor: none; }
+body.playing #game, body.playing canvas { cursor: none; }

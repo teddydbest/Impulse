@@ -5,9 +5,10 @@ export const cheats = {
   aimbot: false,
   aimbotHead: true,
   aimbotFov: 8,        // degrees — cone around the crosshair the aimbot locks within
-  aimbotSmooth: 0.35,  // 0.05 = buttery, 1 = instant snap
+  aimbotSmooth: 0.25,  // 0.05 = buttery/slow, 1 = fast (never an instant snap)
   triggerbot: false,
   wallhack: false,     // ESP boxes + snaplines + see-through chams
+  wallbang: false,     // bullets penetrate walls
   radar: false,        // minimap blips
   noRecoil: false,
   noSpread: false,     // pinpoint "laser" accuracy
@@ -36,6 +37,7 @@ export const CHEAT_CONTROLS = [
   { k: 'aimbotSmooth', label: '› Smoothing',       type: 'range', min: 0.05, max: 1, step: 0.05, sub: true },
   { k: 'triggerbot',   label: 'Triggerbot',        type: 'toggle', hotkey: 'KeyX', desc: 'Auto-fire when aimed at an enemy' },
   { k: 'wallhack',     label: 'Wallhack / ESP',    type: 'toggle', hotkey: 'KeyV', desc: 'See enemies through walls + boxes' },
+  { k: 'wallbang',     label: 'Wallbang',          type: 'toggle', hotkey: 'KeyN', desc: 'Bullets shoot through walls' },
   { k: 'radar',        label: 'Radar',             type: 'toggle', desc: 'Top-down minimap of enemies' },
   { k: 'noRecoil',     label: 'No recoil',         type: 'toggle' },
   { k: 'noSpread',     label: 'No spread (laser)', type: 'toggle' },

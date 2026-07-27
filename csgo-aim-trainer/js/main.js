@@ -120,7 +120,7 @@ class Game {
     // Hint shown only when the mouse isn't captured (free-look fallback active).
     this._lookHint = document.createElement('div');
     this._lookHint.id = 'look-hint';
-    this._lookHint.textContent = '🖱 Move the mouse toward the screen edges to look · click to capture the mouse';
+    this._lookHint.textContent = 'Move your mouse to look · click for precise (captured) aim';
     Object.assign(this._lookHint.style, {
       position: 'fixed', bottom: '84px', left: '50%', transform: 'translateX(-50%)',
       zIndex: '23', pointerEvents: 'none', display: 'none', font: '13px monospace',
@@ -343,6 +343,7 @@ class Game {
     this._panelOpen = true;
     this.paused = true;
     this.firing = false;
+    document.body.classList.remove('playing');
     this._setAim(false);
     if (this.player.isLocked) this.player.controls.unlock();
     document.getElementById('pause').classList.add('hidden');
@@ -353,6 +354,7 @@ class Game {
     this._panelOpen = false;
     document.getElementById('ingame-panel').classList.add('hidden');
     this.paused = false;
+    document.body.classList.add('playing');
     this._requestLock();
   }
 
@@ -452,6 +454,7 @@ class Game {
     this.running = true;
     this.paused = false;
     this._panelOpen = false;
+    document.body.classList.add('playing');   // hide the cursor
     this.player.controls.pointerSpeed = settings.sensitivity;
     this._applyCheats();
     this._requestLock();
@@ -466,6 +469,7 @@ class Game {
     if (this._gameOver) return;
     this.paused = true;
     this.firing = false;
+    document.body.classList.remove('playing');
     this._setAim(false);
     const acc = this.shotsFired ? Math.round(this.shotsHit / this.shotsFired * 100) : 100;
     document.getElementById('pause-stats').innerHTML = this._statRows({
@@ -479,6 +483,7 @@ class Game {
     // Unpause immediately (works with or without Pointer Lock), then try to
     // re-capture the mouse for precise aim where the API is allowed.
     this.paused = false;
+    document.body.classList.add('playing');
     document.getElementById('pause').classList.add('hidden');
     this._requestLock();
   }
@@ -488,6 +493,7 @@ class Game {
     this.paused = false;
     this._gameOver = false;
     this._panelOpen = false;
+    document.body.classList.remove('playing');
     this.director.reset();
     this.hud.hide();
     document.getElementById('pause').classList.add('hidden');
@@ -502,6 +508,7 @@ class Game {
     this._gameOver = true;
     this.running = false;
     this.firing = false;
+    document.body.classList.remove('playing');
     audio.gameOver();
     if (this.player.isLocked) this.player.controls.unlock();
     const acc = this.shotsFired ? Math.round(this.shotsHit / this.shotsFired * 100) : 0;
@@ -667,8 +674,10 @@ class Game {
     // desired orientation whose forward (-Z) points along dir
     const m = new THREE.Matrix4().lookAt(new THREE.Vector3(0, 0, 0), dir, new THREE.Vector3(0, 1, 0));
     const targetQ = new THREE.Quaternion().setFromRotationMatrix(m);
-    const s = Math.min(1, cheats.aimbotSmooth * dt * 22);
-    this.camera.quaternion.slerp(targetQ, s);
+    // Frame-rate-independent exponential easing — always glides, never snaps.
+    const rate = 2.5 + cheats.aimbotSmooth * 11;   // ~3..13.5 (was up to 22)
+    const s = 1 - Math.exp(-rate * dt);
+    this.camera.quaternion.slerp(targetQ, s);      // slerp already takes the shortest arc
     this._recoilAccum = 0; // keep it glued
   }
 
@@ -680,6 +689,7 @@ class Game {
     for (const e of this.director.enemies) if (!e.dead) em.push(...e.hitMeshes);
     const eh = this.raycaster.intersectObjects(em, false);
     if (!eh.length) return false;
+    if (cheats.wallbang) return true;              // shoot through walls
     const wh = this.raycaster.intersectObjects(this.map.solids, false);
     return !(wh.length && wh[0].distance < eh[0].distance);
   }
@@ -796,7 +806,8 @@ class Game {
     let hitPoint = origin.clone().addScaledVector(dir, def.range);
     let struckEnemy = false;
 
-    if (enemyHits.length && enemyHits[0].distance < wallDist) {
+    // Wallbang: bullets penetrate solids and still hit the enemy behind them.
+    if (enemyHits.length && (cheats.wallbang || enemyHits[0].distance < wallDist)) {
       const hit = enemyHits[0];
       hitPoint = hit.point.clone();
       const ud = hit.object.userData;
@@ -841,12 +852,30 @@ class Game {
     this._updateStatsHud();
   }
 
-  _spawnTracer(a, b) {
+  _spawnTracer(a, b, { color = 0xffe08a, ttl = 0.06, opacity = 0.9 } = {}) {
     const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
-    const mat = new THREE.LineBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
     const line = new THREE.Line(geo, mat);
     this.scene.add(line);
-    this.tracers.push({ line, life: 0, ttl: 0.06 });
+    this.tracers.push({ line, life: 0, ttl });
+  }
+
+  // Visible incoming round from an enemy toward the player (hits go at you,
+  // misses whiz past) so damage never feels like it comes from nowhere.
+  _enemyTracer(enemy, hit) {
+    const from = enemy.gunMesh
+      ? enemy.gunMesh.getWorldPosition(new THREE.Vector3())
+      : enemy.position.clone().setY(1.1);
+    const to = this.camera.position.clone();
+    if (!hit) {
+      // push the endpoint off to the side/up so the round streaks past you
+      const side = new THREE.Vector3().subVectors(to, from).cross(new THREE.Vector3(0, 1, 0)).normalize();
+      to.addScaledVector(side, (Math.random() - 0.5) * 3.0);
+      to.y += (Math.random() - 0.2) * 1.8;
+    }
+    // stop the streak just short of the camera so it reads as a passing round
+    to.addScaledVector(new THREE.Vector3().subVectors(from, to).normalize(), 1.2);
+    this._spawnTracer(from, to, { color: 0xff6a2a, ttl: 0.11, opacity: 1.0 });
   }
 
   _spawnImpact(point, normal, blood) {
@@ -918,6 +947,7 @@ class Game {
       // ranged: roll accuracy, degraded slightly by player movement
       const moveFactor = this.player.speedScalar > 0.4 ? 0.8 : 1.0;
       hit = Math.random() < enemy.accuracy * moveFactor;
+      this._enemyTracer(enemy, hit); // always show the incoming round
     }
     if (hit) {
       const dead = this.player.takeDamage(dmg);
